@@ -190,7 +190,7 @@ if submitted:
         st.image(
         font_info["image"],
         caption=f"Preview: {font_info['name']}",
-        width="stretch",
+        width="stretch",)
 
     # Optional: Display distances to centroids for transparency
     with st.expander("View K-Means Distance Breakdown"):
