@@ -10,46 +10,55 @@ FONT_MAPPINGS = {
         "name": "Small Seal Script (小篆)",
         "desc": "Elegant, symmetrical, and deeply historic. Ideal for traditionalists who value structure and heritage.",
         "traits": "High Structure, High History",
+        "image": "asset/font_0_seal.png",
     },
     1: {
         "name": "Clerical Script (隸書)",
         "desc": "Flat, wide, orderly, and official. Perfect for pragmatic, disciplined, and steady personalities.",
         "traits": "High Structure, Moderate Tempo",
+        "image": "asset/font_1_clerical.png",
     },
     2: {
         "name": "Yan Style Standard Script (顏體楷書)",
         "desc": "Bold, dignified, and rigorous. Suits perfectionists who command respect and uphold strong principles.",
         "traits": "High Structure, Low Impulsivity",
+        "image": "asset/font_2_yan.png",
     },
     3: {
-        "name": "Standard Kaiti (標準楷書)",
+        "name": "Liu Style Standard Script (柳體楷書)",
         "desc": "Clean, clear, and balanced. Great for steady, reliable, and modern professionals.",
         "traits": "Balanced Structure & Flow",
+        "image": "asset/font_3_liu.png",
     },
     4: {
         "name": "Smooth Running Script (淡雅行書)",
         "desc": "Smooth, practical, and graceful. Fits adaptable diplomats who value balance and ease.",
         "traits": "Moderate Flow, High Adaptability",
+        "image": "asset/font_4_smooth_running.png",
     },
     5: {
         "name": "Expressive Running Script (狂行書)",
         "desc": "Energetic, fast, and dynamic. Tailored for creative free spirits who love spontaneity.",
         "traits": "High Flow, High Expression",
+        "image": "asset/font_5_expressive_running.png",
     },
     6: {
         "name": "Cursive Script (草書)",
         "desc": "Abstract, emotional, and sweeping. Perfect for passionate artists driven by raw emotion.",
         "traits": "High Energy, High Extroversion",
+        "image": "asset/font_6_cursive.png",
     },
     7: {
-        "name": "Modern Artistic Calligraphy (現代意象書法)",
+        "name": "Slender Gold Calligraphy (瘦金體書法)",
         "desc": "Simplified, artistic, and minimalist. Matches modern minimalists who appreciate clean aesthetics.",
         "traits": "Low Complexity, High Flow",
+        "image": "asset/font_7_slender.png",
     },
     8: {
-        "name": "Rough/Heavy Splash Ink Style (碑體/重墨書法)",
+        "name": "Heavy Splash Ink Style (重墨書法)",
         "desc": "Raw, heavy-set, and commanding. Designed for bold mavericks with an unyielding presence.",
         "traits": "High Boldness, Unconventional",
+        "image": "asset/font_8_splash_ink.png",
     },
 }
 
@@ -68,12 +77,12 @@ def train_kmeans_model():
             [4.5, 1.5, 2.0, 4.8, 2.0],  # 0: Seal
             [4.0, 2.5, 2.5, 3.5, 2.5],  # 1: Clerical
             [4.5, 2.0, 3.0, 4.0, 2.0],  # 2: Yan Standard
-            [3.0, 3.0, 3.0, 3.0, 3.0],  # 3: Kaiti
+            [3.0, 3.0, 3.0, 3.0, 3.0],  # 3: Liu Standard
             [2.5, 3.5, 3.5, 2.5, 4.0],  # 4: Smooth Running
             [2.0, 4.0, 4.0, 2.0, 4.5],  # 5: Expressive Running
             [1.5, 4.8, 4.8, 1.5, 4.5],  # 6: Cursive
-            [2.0, 3.0, 2.0, 1.2, 3.5],  # 7: Modern Minimalist
-            [3.5, 4.5, 4.5, 3.0, 3.5],  # 8: Heavy/Splash Ink
+            [2.0, 3.0, 2.0, 1.2, 3.5],  # 7: Slender Gold
+            [3.5, 4.5, 4.5, 3.0, 3.5],  # 8: Heavy Splash Ink
         ]
     )
 
@@ -176,6 +185,12 @@ if submitted:
 
     st.markdown(f"### **Core Profile Vibe:** _{font_info['traits']}_")
     st.write(font_info["desc"])
+    with col2:
+    # Display the physical preview image of the font
+    st.image(
+        font_info["image"],
+        caption=f"Preview: {font_info['name']}",
+        width="stretch",
 
     # Optional: Display distances to centroids for transparency
     with st.expander("View K-Means Distance Breakdown"):
