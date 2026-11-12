@@ -1,0 +1,14 @@
+your-project-folder/
+│
+├── app.py
+├── requirements.txt
+└── assets/
+    ├── font_0_seal.png
+    ├── font_1_clerical.png
+    ├── font_2_yan.png
+    ├── font_3_kaiti.png
+    ├── font_4_smooth_running.png
+    ├── font_5_expressive_running.png
+    ├── font_6_cursive.png
+    ├── font_7_modern.png
+    └── font_8_splash_ink.png
