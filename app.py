@@ -187,7 +187,7 @@ if submitted:
     st.write(font_info["desc"])
     with col2:
     # Display the physical preview image of the font
-    st.image(
+        st.image(
         font_info["image"],
         caption=f"Preview: {font_info['name']}",
         width="stretch",
