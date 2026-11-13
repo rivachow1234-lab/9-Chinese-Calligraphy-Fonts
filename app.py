@@ -1,6 +1,5 @@
 import base64
 import os
-import uuid
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
@@ -13,11 +12,11 @@ st.set_page_config(
     layout="centered",
 )
 
-# --- FORCE RESET CACHE FOR DEFAULT NEUTRAL SELECTION ---
-# Generates a unique ID per browser session to force Streamlit to reset the form to neutral
-if "session_id" not in st.session_state:
-    st.session_state["session_id"] = str(uuid.uuid4())
-session_uuid = st.session_state["session_id"]
+# --- INITIALIZE SESSION STATE FOR DEFAULT NEUTRAL SELECTION ---
+for i in range(1, 11):
+    key = f"q{i}"
+    if key not in st.session_state:
+        st.session_state[key] = 4  # 4 is the middle neutral point
 
 
 # --- HELPER: BACKGROUND, 16PERSONALITIES BUBBLES & CUSTOM ANIMATIONS ---
@@ -51,7 +50,7 @@ def apply_custom_styling():
             margin-bottom: 2rem;
             border: 1px solid rgba(180, 175, 165, 0.4);
             color: #2C2A29;
-            overflow-x: hidden; /* Prevents horizontal scrolling on mobile */
+            overflow-x: hidden;
         }}
 
         /* Force dark text color */
@@ -102,7 +101,7 @@ def apply_custom_styling():
             transform: scale(1.15);
         }}
 
-        /* Varying bubble sizes (Targeting the visible circle div) */
+        /* Varying bubble sizes */
         div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(1) div[role="radio"] > div:first-child,
         div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(7) div[role="radio"] > div:first-child {{
             transform: scale(1.6) !important;
@@ -168,7 +167,6 @@ def apply_custom_styling():
                 gap: 4px !important; 
                 justify-content: space-evenly !important;
             }}
-            /* Slightly smaller bubbles on mobile to ensure fit */
             div[class*="st-key-scale_row_"] div[role="radio"] > div:first-child {{
                 transform: scale(0.85) !important;
             }}
@@ -247,17 +245,10 @@ model = train_kmeans_model()
 LIKERT_MAPPING = {1: 5.0, 2: 4.33, 3: 3.67, 4: 3.0, 5: 2.33, 6: 1.67, 7: 1.0}
 
 
-def mbti_bubbles(question_text, key_base):
+def mbti_bubbles(question_text, key_name):
     st.markdown(f"**{question_text}**")
     
-    # Add the session UUID to guarantee a fresh start on page reload/reset
-    unique_key = f"{key_base}_{session_uuid}"
-    
-    # Force neutral (option 4) on first load of this key
-    if unique_key not in st.session_state:
-        st.session_state[unique_key] = 4
-    
-    with st.container(border=True, key=f"scale_row_{unique_key}"):
+    with st.container(border=True, key=f"scale_row_{key_name}"):
         col_l, col_m, col_r = st.columns([0.8, 5, 0.8])
         with col_l:
             st.markdown('<div class="scale-text-agree">Agree</div>', unsafe_allow_html=True)
@@ -265,11 +256,10 @@ def mbti_bubbles(question_text, key_base):
             choice = st.radio(
                 label=question_text,
                 options=[1, 2, 3, 4, 5, 6, 7],
-                index=3,  # <--- Forces default selection to index 3 (option '4', middle neutral)
                 horizontal=True,
                 label_visibility="collapsed",
                 format_func=lambda x: "",
-                key=unique_key,
+                key=key_name,
             )
         with col_r:
             st.markdown('<div class="scale-text-disagree">Disagree</div>', unsafe_allow_html=True)
@@ -288,7 +278,8 @@ st.markdown(
 col_title_space, col_reset_btn = st.columns([4, 1])
 with col_reset_btn:
     if st.button("🔄 Reset Form", use_container_width=True):
-        st.session_state["session_id"] = str(uuid.uuid4())
+        for i in range(1, 11):
+            st.session_state[f"q{i}"] = 4
         st.rerun()
 
 st.markdown("---")
