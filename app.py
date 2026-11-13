@@ -51,37 +51,35 @@ def apply_custom_styling():
             color: #2C2A29 !important;
         }}
 
-        /* 16Personality-Style Scale Layout Container */
-        .scale-container {{
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        /* Scale Row Container Background */
+        .scale-row {{
             background-color: rgba(242, 239, 233, 0.7);
-            padding: 12px 20px;
+            padding: 8px 12px;
             border-radius: 12px;
             border: 1px solid rgba(180, 175, 165, 0.35);
-            margin-bottom: 14px;
+            margin-bottom: 16px;
         }}
 
-        .scale-label-left {{
+        .scale-text-agree {{
             font-weight: 600;
             color: #2C2A29;
             font-size: 0.95rem;
-            user-select: none;
-            min-width: 60px;
-        }}
-
-        .scale-label-right {{
-            font-weight: 600;
-            color: #2C2A29;
-            font-size: 0.95rem;
-            user-select: none;
-            min-width: 60px;
             text-align: right;
+            padding-top: 6px;
+            user-select: none;
         }}
 
-        /* Force Streamlit radio group to render horizontally and centered */
-        div[role="radiogroup"] {{
+        .scale-text-disagree {{
+            font-weight: 600;
+            color: #2C2A29;
+            font-size: 0.95rem;
+            text-align: left;
+            padding-top: 6px;
+            user-select: none;
+        }}
+
+        /* Force Streamlit radio group inside columns to render horizontally and centered */
+        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] {{
             display: flex !important;
             flex-direction: row !important;
             justify-content: center !important;
@@ -89,10 +87,10 @@ def apply_custom_styling():
             background-color: transparent !important;
             padding: 0 !important;
             border: none !important;
-            margin-bottom: 0 !important;
+            margin: 0 !important;
             gap: 14px !important;
         }}
-        div[role="radiogroup"] > label {{
+        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label {{
             cursor: pointer;
             display: flex !important;
             align-items: center !important;
@@ -101,28 +99,29 @@ def apply_custom_styling():
             background-color: transparent !important;
             border: none !important;
             padding: 0 !important;
+            margin: 0 !important;
         }}
-        div[role="radiogroup"] > label:hover {{
+        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:hover {{
             transform: scale(1.15);
         }}
 
         /* Varying bubble sizes for the 7-point scale */
-        div[role="radiogroup"] > label:nth-child(1) input[type="radio"],
-        div[role="radiogroup"] > label:nth-child(7) input[type="radio"] {{
+        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(1) input[type="radio"],
+        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(7) input[type="radio"] {{
             width: 24px;
             height: 24px;
         }}
-        div[role="radiogroup"] > label:nth-child(2) input[type="radio"],
-        div[role="radiogroup"] > label:nth-child(6) input[type="radio"] {{
+        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(2) input[type="radio"],
+        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(6) input[type="radio"] {{
             width: 19px;
             height: 19px;
         }}
-        div[role="radiogroup"] > label:nth-child(3) input[type="radio"],
-        div[role="radiogroup"] > label:nth-child(5) input[type="radio"] {{
+        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(3) input[type="radio"],
+        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(5) input[type="radio"] {{
             width: 15px;
             height: 15px;
         }}
-        div[role="radiogroup"] > label:nth-child(4) input[type="radio"] {{
+        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(4) input[type="radio"] {{
             width: 11px;
             height: 11px;
         }}
@@ -330,20 +329,22 @@ LIKERT_MAPPING = {
 def mbti_bubbles(question_text, key):
     st.markdown(f"**{question_text}**")
     
-    st.markdown('<div class="scale-container">', unsafe_allow_html=True)
-    st.markdown('<div class="scale-label-left">Agree</div>', unsafe_allow_html=True)
-    
-    choice = st.radio(
-        label=question_text,
-        options=[1, 2, 3, 4, 5, 6, 7],
-        index=3,  # Default to Neutral (middle bubble)
-        horizontal=True,
-        label_visibility="collapsed",
-        format_func=lambda x: "",
-        key=key,
-    )
-    
-    st.markdown('<div class="scale-label-right">Disagree</div>', unsafe_allow_html=True)
+    st.markdown('<div class="scale-row">', unsafe_allow_html=True)
+    col_l, col_m, col_r = st.columns([0.8, 5, 0.8])
+    with col_l:
+        st.markdown('<div class="scale-text-agree">Agree</div>', unsafe_allow_html=True)
+    with col_m:
+        choice = st.radio(
+            label=question_text,
+            options=[1, 2, 3, 4, 5, 6, 7],
+            index=3,  # Starts in the middle (4th bubble)
+            horizontal=True,
+            label_visibility="collapsed",
+            format_func=lambda x: "",
+            key=key,
+        )
+    with col_r:
+        st.markdown('<div class="scale-text-disagree">Disagree</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     
     return LIKERT_MAPPING[choice]
