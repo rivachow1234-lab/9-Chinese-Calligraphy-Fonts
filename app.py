@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 
-# --- HELPER: BACKGROUND, MBTI BUBBLES & CUSTOM ANIMATIONS ---
+# --- HELPER: BACKGROUND, 16PERSONALITIES BUBBLES & CUSTOM ANIMATIONS ---
 def apply_custom_styling():
     local_bg_path = "asset/ink_mountains.jpg"
     if os.path.exists(local_bg_path):
@@ -43,33 +43,55 @@ def apply_custom_styling():
             margin-top: 2rem;
             margin-bottom: 2rem;
             border: 1px solid rgba(180, 175, 165, 0.4);
+            color: #2C2A29;
         }}
 
-        /* MBTI-Style Horizontal Radio Bubbles */
+        /* Force dark text color across Streamlit typography elements */
+        h1, h2, h3, h4, h5, h6, p, span, label, div[data-testid="stMarkdownContainer"] {{
+            color: #2C2A29 !important;
+        }}
+
+        /* 16Personality-Style Horizontal Radio Group */
         div[role="radiogroup"] {{
             display: flex;
-            justify-content: space-between;
+            justify-content: space-around;
             align-items: center;
             background-color: rgba(242, 239, 233, 0.7);
-            padding: 12px 16px;
+            padding: 10px 16px;
             border-radius: 12px;
             border: 1px solid rgba(180, 175, 165, 0.35);
             margin-bottom: 14px;
-            gap: 6px;
         }}
         div[role="radiogroup"] label {{
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
             cursor: pointer;
-            font-size: 0.82rem;
-            padding: 4px 6px;
-            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: transform 0.15s ease;
         }}
         div[role="radiogroup"] label:hover {{
-            transform: scale(1.06);
+            transform: scale(1.15);
+        }}
+
+        /* Varying bubble sizes for the 7-point scale */
+        div[role="radiogroup"] > label:nth-child(1) input[type="radio"],
+        div[role="radiogroup"] > label:nth-child(7) input[type="radio"] {{
+            width: 26px;
+            height: 26px;
+        }}
+        div[role="radiogroup"] > label:nth-child(2) input[type="radio"],
+        div[role="radiogroup"] > label:nth-child(6) input[type="radio"] {{
+            width: 20px;
+            height: 20px;
+        }}
+        div[role="radiogroup"] > label:nth-child(3) input[type="radio"],
+        div[role="radiogroup"] > label:nth-child(5) input[type="radio"] {{
+            width: 15px;
+            height: 15px;
+        }}
+        div[role="radiogroup"] > label:nth-child(4) input[type="radio"] {{
+            width: 11px;
+            height: 11px;
         }}
 
         /* Falling Hearts Animation */
@@ -120,8 +142,6 @@ def trigger_hearts():
 apply_custom_styling()
 
 # --- 1. CONFIGURATION & FONT MAPPINGS ---
-# Keys 0..8 correspond to KMeans internal cluster indices and asset/font_0..8 filenames.
-# Display cluster IDs are shifted to 1..9 in the UI.
 FONT_MAPPINGS = {
     0: {
         "name": "Small Seal Script (小篆)",
@@ -233,7 +253,6 @@ def train_kmeans_model():
     and fits a KMeans model with 9 clusters.
     """
     np.random.seed(42)
-    # 5 dimensions: [Structure, Tempo, Expression, Complexity, Adaptability]
     centers = np.array(
         [
             [4.5, 1.5, 2.0, 4.8, 2.0],  # 0: Seal
@@ -263,27 +282,43 @@ def train_kmeans_model():
 
 model = train_kmeans_model()
 
-# --- 3. MBTI BUBBLE LIKERT SCALE HELPER ---
-LIKERT_OPTIONS = {
-    "Strongly Disagree": 1.0,
-    "Disagree": 2.0,
-    "Neutral": 3.0,
-    "Agree": 4.0,
-    "Strongly Agree": 5.0,
+# --- 3. 16PERSONALITIES SCALE MAPPING ---
+# Maps the 7 options (1 = Strongly Agree, 7 = Strongly Disagree) to 1.0 - 5.0 scores
+LIKERT_MAPPING = {
+    1: 5.0,
+    2: 4.33,
+    3: 3.67,
+    4: 3.0,
+    5: 2.33,
+    6: 1.67,
+    7: 1.0,
 }
 
 
 def mbti_bubbles(question_text, key):
     st.markdown(f"**{question_text}**")
-    choice = st.radio(
-        label=question_text,
-        options=list(LIKERT_OPTIONS.keys()),
-        index=2,  # Default to Neutral (middle bubble)
-        horizontal=True,
-        label_visibility="collapsed",
-        key=key,
-    )
-    return LIKERT_OPTIONS[choice]
+    col_l, col_m, col_r = st.columns([1, 8, 1])
+    with col_l:
+        st.markdown(
+            "<div style='text-align: right; padding-top: 8px; font-weight: 600; color: #2C2A29; font-size: 0.95rem;'>Agree</div>",
+            unsafe_allow_html=True,
+        )
+    with col_r:
+        st.markdown(
+            "<div style='text-align: left; padding-top: 8px; font-weight: 600; color: #2C2A29; font-size: 0.95rem;'>Disagree</div>",
+            unsafe_allow_html=True,
+        )
+    with col_m:
+        choice = st.radio(
+            label=question_text,
+            options=[1, 2, 3, 4, 5, 6, 7],
+            index=3,  # Default to Neutral (middle bubble)
+            horizontal=True,
+            label_visibility="collapsed",
+            format_func=lambda x: "",
+            key=key,
+        )
+    return LIKERT_MAPPING[choice]
 
 
 # --- 4. STREAMLIT UI ---
@@ -309,96 +344,4 @@ with st.form("calligraphy_form"):
 
     # Dimension 2: Tempo & Energy (Q3 & Q4)
     q3 = mbti_bubbles(
-        "3. I move, think, and make decisions quickly, often acting on instinct.",
-        "q3",
-    )
-    q4 = mbti_bubbles(
-        "4. I thrive in fast-paced environments rather than taking a slow, methodical approach.",
-        "q4",
-    )
-
-    # Dimension 3: Expression & Emotion (Q5 & Q6)
-    q5 = mbti_bubbles(
-        "5. I express my emotions outwardly and passionately rather than keeping them bottled up.",
-        "q5",
-    )
-    q6 = mbti_bubbles(
-        "6. People around me can easily tell how I am feeling from my energy and tone.",
-        "q6",
-    )
-
-    # Dimension 4: Complexity vs. Minimalism (Q7 & Q8)
-    q7 = mbti_bubbles(
-        "7. I am deeply fascinated by history, rich tradition, and intricate details.",
-        "q7",
-    )
-    q8 = mbti_bubbles(
-        "8. I appreciate layered, ornate craftsmanship more than sleek, bare minimalism.",
-        "q8",
-    )
-
-    # Dimension 5: Adaptability & Flow (Q9 & Q10)
-    q9 = mbti_bubbles(
-        "9. I adapt smoothly to sudden changes rather than sticking rigidly to my original plan.",
-        "q9",
-    )
-    q10 = mbti_bubbles(
-        "10. I enjoy improvising in the moment when unexpected opportunities arise.",
-        "q10",
-    )
-
-    submitted = st.form_submit_button("Find My Calligraphy Font!")
-
-# --- 5. PREDICTION & RESULT DISPLAY ---
-if submitted:
-    # Average each pair of questions into the 5 core dimensions
-    dim_structure = (q1 + q2) / 2.0
-    dim_tempo = (q3 + q4) / 2.0
-    dim_expression = (q5 + q6) / 2.0
-    dim_complexity = (q7 + q8) / 2.0
-    dim_adaptability = (q9 + q10) / 2.0
-
-    user_vector = np.array(
-        [[dim_structure, dim_tempo, dim_expression, dim_complexity, dim_adaptability]]
-    )
-
-    # Predict internal cluster (0..8) and convert to 1..9 for display
-    cluster_idx = int(model.predict(user_vector)[0])
-    display_cluster_num = cluster_idx + 1
-    font_info = FONT_MAPPINGS[cluster_idx]
-
-    # Trigger falling hearts
-    trigger_hearts()
-
-    st.markdown("---")
-    st.subheader("✨ Your Calligraphy Match Result")
-
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        st.metric(label="Assigned Cluster ID", value=f"Cluster #{display_cluster_num}")
-    with col2:
-        st.success(f"**Recommended Style:** {font_info['name']}")
-
-    st.markdown(f"### **Core Profile Vibe:** _{font_info['traits']}_")
-    st.write(font_info["desc"])
-
-    with col2:
-        if os.path.exists(font_info["image"]):
-            st.image(
-                font_info["image"],
-                caption=f"Preview: {font_info['name']}",
-                use_container_width=True,
-            )
-        else:
-            st.info(f"Preview image placeholder: `{font_info['image']}`")
-
-    with st.expander("View K-Means Distance Breakdown"):
-        distances = model.transform(user_vector)[0]
-        dist_df = pd.DataFrame(
-            {
-                "Cluster": [k + 1 for k in FONT_MAPPINGS.keys()],
-                "Font Style": [f["name"] for f in FONT_MAPPINGS.values()],
-                "Distance Score (Lower is Closer)": distances,
-            }
-        ).sort_values("Distance Score (Lower is Closer)")
-        st.dataframe(dist_df, hide_index=True)
+        "3. I move, think, and make decisions quickly, often
