@@ -1,5 +1,6 @@
 import base64
 import os
+import uuid
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
@@ -12,7 +13,13 @@ st.set_page_config(
     layout="centered",
 )
 
-# --- HELPER: BACKGROUND, 16PERSONALITIES BUBBLES & CUSTOM ANIMATIONS ---
+# --- FORCE RESET CACHE FOR DEFAULT NEUTRAL SELECTION ---
+if "session_id" not in st.session_state:
+    st.session_state["session_id"] = str(uuid.uuid4())
+session_uuid = st.session_state["session_id"]
+
+
+# --- HELPER: BACKGROUND & CUSTOM STYLING ---
 def apply_custom_styling():
     local_bg_path = "asset/ink_mountains.jpg"
     if os.path.exists(local_bg_path):
@@ -51,10 +58,10 @@ def apply_custom_styling():
             color: #2C2A29 !important;
         }}
 
-        /* Scale Row Container */
+        /* Slider Row Container */
         div[class*="st-key-scale_row_"] {{
             background-color: rgba(242, 239, 233, 0.7) !important;
-            padding: 8px 12px !important;
+            padding: 12px 16px !important;
             border-radius: 12px !important;
             border: 1px solid rgba(180, 175, 165, 0.35) !important;
             margin-bottom: 16px !important;
@@ -63,52 +70,12 @@ def apply_custom_styling():
 
         .scale-text-agree {{
             font-weight: 600; color: #2C2A29; font-size: 0.95rem;
-            text-align: right; padding-top: 6px; user-select: none;
+            text-align: right; padding-top: 8px; user-select: none;
         }}
 
         .scale-text-disagree {{
             font-weight: 600; color: #2C2A29; font-size: 0.95rem;
-            text-align: left; padding-top: 6px; user-select: none;
-        }}
-
-        /* Radio Group Alignment */
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] {{
-            display: flex !important;
-            flex-direction: row !important;
-            justify-content: center !important;
-            align-items: center !important;
-            background-color: transparent !important;
-            padding: 0 !important;
-            border: none !important;
-            margin: 0 !important;
-            gap: 14px !important;
-        }}
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label {{
-            cursor: pointer; display: flex !important;
-            align-items: center !important; justify-content: center !important;
-            transition: transform 0.15s ease;
-            background-color: transparent !important; border: none !important;
-            padding: 0 !important; margin: 0 !important;
-        }}
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:hover {{
-            transform: scale(1.15);
-        }}
-
-        /* Varying bubble sizes */
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(1) div[role="radio"] > div:first-child,
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(7) div[role="radio"] > div:first-child {{
-            transform: scale(1.6) !important;
-        }}
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(2) div[role="radio"] > div:first-child,
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(6) div[role="radio"] > div:first-child {{
-            transform: scale(1.3) !important;
-        }}
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(3) div[role="radio"] > div:first-child,
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(5) div[role="radio"] > div:first-child {{
-            transform: scale(1.0) !important;
-        }}
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(4) div[role="radio"] > div:first-child {{
-            transform: scale(0.75) !important;
+            text-align: left; padding-top: 8px; user-select: none;
         }}
 
         /* Submit Button Styling */
@@ -131,37 +98,10 @@ def apply_custom_styling():
             font-weight: 600 !important;
         }}
 
-        /* --- MOBILE FIXES --- */
+        /* Mobile adjustments */
         @media (max-width: 640px) {{
-            div[class*="st-key-scale_row_"] div[data-testid="stHorizontalBlock"] {{
-                display: flex !important;
-                flex-direction: row !important;
-                flex-wrap: nowrap !important;
-                align-items: center !important;
-                justify-content: center !important;
-                gap: 0px !important;
-                width: 100% !important;
-            }}
-            div[class*="st-key-scale_row_"] div[data-testid="column"] {{
-                padding: 0 !important;
-                margin: 0 !important;
-                width: auto !important;
-                min-width: 0 !important;
-            }}
-            div[class*="st-key-scale_row_"] div[data-testid="column"]:nth-of-type(2) {{
-                flex: 1 1 auto !important;
-            }}
             .scale-text-agree, .scale-text-disagree {{
                 font-size: 0.75rem !important;
-                padding-top: 8px !important;
-                white-space: nowrap !important;
-            }}
-            div[class*="st-key-scale_row_"] div[role="radiogroup"] {{
-                gap: 4px !important; 
-                justify-content: space-evenly !important;
-            }}
-            div[class*="st-key-scale_row_"] div[role="radio"] > div:first-child {{
-                transform: scale(0.85) !important;
             }}
         }}
 
@@ -234,28 +174,36 @@ def train_kmeans_model():
 
 model = train_kmeans_model()
 
-# --- 3. 16PERSONALITIES SCALE MAPPING ---
+# --- 3. LIKERT SCALE MAPPING ---
 LIKERT_MAPPING = {1: 5.0, 2: 4.33, 3: 3.67, 4: 3.0, 5: 2.33, 6: 1.67, 7: 1.0}
 
 
-def mbti_bubbles(question_text, key_name):
+def mbti_slider(question_text, key_base):
     st.markdown(f"**{question_text}**")
     
-    # Static container key keeps your CSS styling intact without caching widget state
-    with st.container(border=True, key=f"scale_row_{key_name}"):
-        col_l, col_m, col_r = st.columns([0.8, 5, 0.8])
+    unique_key = f"{key_base}_{session_uuid}"
+    
+    # Force neutral start (value = 4)
+    if unique_key not in st.session_state:
+        st.session_state[unique_key] = 4
+    
+    with st.container(border=True, key=f"scale_row_{unique_key}"):
+        col_l, col_m, col_r = st.columns([0.9, 5, 0.9])
+        
         with col_l:
             st.markdown('<div class="scale-text-agree">Agree</div>', unsafe_allow_html=True)
+        
         with col_m:
-            choice = st.radio(
+            choice = st.slider(
                 label=question_text,
-                options=[1, 2, 3, 4, 5, 6, 7],
-                index=3,  # <--- Forces default to index 3 (option 4, middle neutral)
-                horizontal=True,
+                min_value=1,
+                max_value=7,
+                value=st.session_state[unique_key],
+                step=1,
+                key=unique_key,
                 label_visibility="collapsed",
-                format_func=lambda x: "",
-                # NO 'key' parameter here, preventing Streamlit from locking/storing old states
             )
+        
         with col_r:
             st.markdown('<div class="scale-text-disagree">Disagree</div>', unsafe_allow_html=True)
     
@@ -265,35 +213,28 @@ def mbti_bubbles(question_text, key_name):
 # --- 4. STREAMLIT UI ---
 st.title("🖌️ Chinese Calligraphy Personality Matcher")
 st.markdown(
-    "Select the bubble that best reflects how much you agree or disagree with each of the **10 statements** below. "
+    "Move the slider to show how much you agree or disagree with each of the **10 statements** below. "
     "Our K-Means clustering model will analyze your responses across 5 psychological dimensions to match you with **1 of 9 Chinese Calligraphy Styles**."
 )
-
-# Reset Button placement right above the form
-col_title_space, col_reset_btn = st.columns([4, 1])
-with col_reset_btn:
-    if st.button("🔄 Reset Form", use_container_width=True):
-        st.rerun()
-
 st.markdown("---")
 
 with st.form("calligraphy_form"):
     st.subheader("Your Personality Assessment")
 
-    q1 = mbti_bubbles("1. I prefer clear rules, neat organization, and structured plans over creative chaos.", "q1")
-    q2 = mbti_bubbles("2. I feel most comfortable when my daily schedule and workspace are well-ordered.", "q2")
+    q1 = mbti_slider("1. I prefer clear rules, neat organization, and structured plans over creative chaos.", "q1")
+    q2 = mbti_slider("2. I feel most comfortable when my daily schedule and workspace are well-ordered.", "q2")
 
-    q3 = mbti_bubbles("3. I move, think, and make decisions quickly, often acting on instinct.", "q3")
-    q4 = mbti_bubbles("4. I thrive in fast-paced environments rather than taking a slow, methodical approach.", "q4")
+    q3 = mbti_slider("3. I move, think, and make decisions quickly, often acting on instinct.", "q3")
+    q4 = mbti_slider("4. I thrive in fast-paced environments rather than taking a slow, methodical approach.", "q4")
 
-    q5 = mbti_bubbles("5. I express my emotions outwardly and passionately rather than keeping them bottled up.", "q5")
-    q6 = mbti_bubbles("6. People around me can easily tell how I am feeling from my energy and tone.", "q6")
+    q5 = mbti_slider("5. I express my emotions outwardly and passionately rather than keeping them bottled up.", "q5")
+    q6 = mbti_slider("6. People around me can easily tell how I am feeling from my energy and tone.", "q6")
 
-    q7 = mbti_bubbles("7. I am deeply fascinated by history, rich tradition, and intricate details.", "q7")
-    q8 = mbti_bubbles("8. I appreciate layered, ornate craftsmanship more than sleek, bare minimalism.", "q8")
+    q7 = mbti_slider("7. I am deeply fascinated by history, rich tradition, and intricate details.", "q7")
+    q8 = mbti_slider("8. I appreciate layered, ornate craftsmanship more than sleek, bare minimalism.", "q8")
 
-    q9 = mbti_bubbles("9. I adapt smoothly to sudden changes rather than sticking rigidly to my original plan.", "q9")
-    q10 = mbti_bubbles("10. I enjoy improvising in the moment when unexpected opportunities arise.", "q10")
+    q9 = mbti_slider("9. I adapt smoothly to sudden changes rather than sticking rigidly to my original plan.", "q9")
+    q10 = mbti_slider("10. I enjoy improvising in the moment when unexpected opportunities arise.", "q10")
 
     submitted = st.form_submit_button("Find My Calligraphy Font!")
 
