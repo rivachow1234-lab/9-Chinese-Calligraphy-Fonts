@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.cluster import KMeans
 import streamlit as st
 
-# --- 0. PAGE CONFIG ---
+# --- 0. PAGE CONFIG (Must be first Streamlit command) ---
 st.set_page_config(
     page_title="Personality Calligraphy Matcher",
     page_icon="🖌️",
@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 
-# --- HELPER: BACKGROUND, TIMES NEW ROMAN & STYLING ---
+# --- HELPER: BACKGROUND, TIMES NEW ROMAN, STYLING & ANIMATIONS ---
 def apply_custom_styling():
     local_bg_path = "asset/ink_mountains.jpg"
     if os.path.exists(local_bg_path):
@@ -39,7 +39,7 @@ def apply_custom_styling():
             background-attachment: fixed;
         }}
 
-        /* Frosted Rice-Paper Container */
+        /* Frosted Rice-Paper Container for Readability */
         .block-container {{
             background-color: rgba(255, 253, 249, 0.92);
             padding: 2.5rem 2rem;
@@ -49,6 +49,70 @@ def apply_custom_styling():
             margin-bottom: 2rem;
             border: 1px solid rgba(180, 175, 165, 0.4);
         }}
+
+        /* 16Personalities Style Scale Wrapper Box */
+        .scale-wrapper {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(242, 239, 233, 0.75);
+            padding: 14px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(180, 175, 165, 0.35);
+            margin-bottom: 16px;
+        }}
+        .lbl-agree {{
+            font-family: 'Times New Roman', Times, serif;
+            font-weight: bold;
+            color: #1b4332;
+            font-size: 1rem;
+            min-width: 65px;
+            z-index: 2;
+        }}
+        .lbl-disagree {{
+            font-family: 'Times New Roman', Times, serif;
+            font-weight: bold;
+            color: #3c096c;
+            font-size: 1rem;
+            min-width: 75px;
+            text-align: right;
+            z-index: 2;
+        }}
+
+        /* Fix Streamlit Radio Group alignment to span evenly between Agree & Disagree */
+        div[data-testid="stRadio"] {{
+            flex-grow: 1;
+            margin: 0 24px !important;
+        }}
+        div[data-testid="stRadio"] div[role="radiogroup"] {{
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+            margin: 0 !important;
+            background: transparent !important;
+        }}
+        div[data-testid="stRadio"] div[role="radiogroup"] label {{
+            cursor: pointer !important;
+            padding: 0 !important;
+            transition: transform 0.15s ease;
+        }}
+        div[data-testid="stRadio"] div[role="radiogroup"] label:hover {{
+            transform: scale(1.15);
+        }}
+        div[data-testid="stRadio"] div[role="radiogroup"] label p {{
+            display: none !important;
+        }}
+
+        /* Sizing and Green-to-Purple gradient accent colors for the 7 radio buttons */
+        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(1) input {{ width: 28px; height: 28px; accent-color: #1b4332; }}
+        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(2) input {{ width: 23px; height: 23px; accent-color: #2d6a4f; }}
+        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(3) input {{ width: 18px; height: 18px; accent-color: #52b788; }}
+        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(4) input {{ width: 13px; height: 13px; accent-color: #6c757d; }}
+        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(5) input {{ width: 18px; height: 18px; accent-color: #7b2cbf; }}
+        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(6) input {{ width: 23px; height: 23px; accent-color: #560bad; }}
+        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(7) input {{ width: 28px; height: 28px; accent-color: #3c096c; }}
 
         /* Falling Hearts Animation */
         @keyframes fall {{
@@ -77,6 +141,7 @@ def apply_custom_styling():
 
 
 def trigger_hearts():
+    """Renders floating/falling hearts across the screen."""
     hearts_html = ""
     heart_icons = ["❤️", "🖤", "♥️", "💖"]
     np.random.seed(None)
@@ -201,23 +266,24 @@ FONT_MAPPINGS = {
 }
 
 
-# --- 2. INITIALIZE K-MEANS MODEL ---
+# --- 2. INITIALIZE MODEL WITH SYNTHETIC DATA ---
 @st.cache_resource
 def train_kmeans_model():
     np.random.seed(42)
     centers = np.array(
         [
-            [6.5, 2.0, 2.5, 6.5, 2.5],
-            [5.5, 3.5, 3.0, 5.0, 3.0],
-            [6.5, 2.5, 4.0, 5.5, 2.5],
-            [4.0, 4.0, 4.0, 4.0, 4.0],
-            [3.0, 5.0, 5.0, 3.0, 6.0],
-            [2.5, 6.0, 6.0, 2.5, 6.5],
-            [1.5, 6.8, 6.8, 1.5, 6.5],
-            [2.5, 4.0, 2.5, 1.8, 5.0],
-            [5.0, 6.5, 6.5, 4.0, 5.0],
+            [6.5, 2.0, 2.5, 6.5, 2.5],  # 0: Seal
+            [5.5, 3.5, 3.0, 5.0, 3.0],  # 1: Clerical
+            [6.5, 2.5, 4.0, 5.5, 2.5],  # 2: Yan Standard
+            [4.0, 4.0, 4.0, 4.0, 4.0],  # 3: Liu Standard
+            [3.0, 5.0, 5.0, 3.0, 6.0],  # 4: Smooth Running
+            [2.5, 6.0, 6.0, 2.5, 6.5],  # 5: Expressive Running
+            [1.5, 6.8, 6.8, 1.5, 6.5],  # 6: Cursive
+            [2.5, 4.0, 2.5, 1.8, 5.0],  # 7: Slender Gold
+            [5.0, 6.5, 6.5, 4.0, 5.0],  # 8: Heavy Splash Ink
         ]
     )
+
     data = []
     for center in centers:
         cluster_points = np.random.normal(loc=center, scale=0.5, size=(30, 5))
@@ -225,6 +291,7 @@ def train_kmeans_model():
 
     X = np.vstack(data)
     X = np.clip(X, 1.0, 7.0)
+
     kmeans = KMeans(n_clusters=9, random_state=42, n_init=10)
     kmeans.fit(X)
     return kmeans
@@ -232,112 +299,48 @@ def train_kmeans_model():
 
 model = train_kmeans_model()
 
+# --- 3. MBTI 7-POINT SCALE HELPER ---
+LIKERT_OPTIONS_7 = [
+    "Strongly Agree",
+    "Agree",
+    "Somewhat Agree",
+    "Neutral",
+    "Somewhat Disagree",
+    "Disagree",
+    "Strongly Disagree",
+]
 
-# --- 3. 16PERSONALITIES SCALE HELPER (Agree -> Bubbles -> Disagree) ---
+SCORE_MAP = {
+    "Strongly Agree": 7.0,
+    "Agree": 6.0,
+    "Somewhat Agree": 5.0,
+    "Neutral": 4.0,
+    "Somewhat Disagree": 3.0,
+    "Disagree": 2.0,
+    "Strongly Disagree": 1.0,
+}
+
+
 def mbti_scale_question(question_text, key):
     st.markdown(f"**{question_text}**")
-
-    # Render custom HTML container matching the 16Personalities layout exactly
-    html_code = f"""
-    <style>
-      .scale-wrapper {{
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background-color: rgba(242, 239, 233, 0.75);
-        padding: 12px 18px;
-        border-radius: 12px;
-        border: 1px solid rgba(180, 175, 165, 0.35);
-        margin-bottom: 16px;
-      }}
-      .lbl-agree {{
-        font-family: 'Times New Roman', Times, serif;
-        font-weight: bold;
-        color: #1b4332;
-        font-size: 1rem;
-        width: 70px;
-      }}
-      .lbl-disagree {{
-        font-family: 'Times New Roman', Times, serif;
-        font-weight: bold;
-        color: #3c096c;
-        font-size: 1rem;
-        width: 80px;
-        text-align: right;
-      }}
-      .bubbles-row {{
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 16px;
-        flex-grow: 1;
-      }}
-    </style>
-    <div class="scale-wrapper">
-      <div class="lbl-agree">Agree</div>
-      <div class="bubbles-row">
-        <!-- Bubbles will be injected here via Streamlit columns -->
-      </div>
-      <div class="lbl-disagree">Disagree</div>
-    </div>
-    """
-    st.markdown(html_code, unsafe_allow_html=True)
-
-    # 7 distinct radio options from Agree (left) to Disagree (right)
-    # Sizes: 28px, 24px, 18px, 12px (neutral), 18px, 24px, 28px
-    options = [
-        ("Strongly Agree", 7.0, "28px", "#1b4332"),
-        ("Agree", 6.0, "23px", "#2d6a4f"),
-        ("Somewhat Agree", 5.0, "18px", "#52b788"),
-        ("Neutral", 4.0, "13px", "#6c757d"),
-        ("Somewhat Disagree", 3.0, "18px", "#7b2cbf"),
-        ("Disagree", 2.0, "23px", "#560bad"),
-        ("Strongly Disagree", 1.0, "28px", "#3c096c"),
-    ]
-
-    # Custom styling for radio buttons to arrange them horizontally with exact scaling & colors
-    st.markdown(
-        f"""
-        <style>
-        div[data-testid="stRadio"] div[role="radiogroup"] {{
-            display: flex !important;
-            flex-direction: row !important;
-            justify-content: center !important;
-            gap: 18px !important;
-            margin-top: -55px !important;
-            margin-bottom: 10px !important;
-        }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label {{
-            cursor: pointer !important;
-        }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label p {{
-            display: none !important;
-        }}
-        /* Sizing and colors for the 7 radio buttons */
-        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(1) input {{ width: 28px; height: 28px; accent-color: #1b4332; }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(2) input {{ width: 23px; height: 23px; accent-color: #2d6a4f; }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(3) input {{ width: 18px; height: 18px; accent-color: #52b788; }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(4) input {{ width: 13px; height: 13px; accent-color: #6c757d; }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(5) input {{ width: 18px; height: 18px; accent-color: #7b2cbf; }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(6) input {{ width: 23px; height: 23px; accent-color: #560bad; }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(7) input {{ width: 28px; height: 28px; accent-color: #3c096c; }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown('<div class="scale-wrapper">', unsafe_allow_html=True)
+    st.markdown('<span class="lbl-agree">Agree</span>', unsafe_allow_html=True)
 
     choice = st.radio(
         label=question_text,
-        options=[opt[0] for opt in options],
+        options=LIKERT_OPTIONS_7,
         index=3,  # Default to Neutral
         horizontal=True,
         label_visibility="collapsed",
         key=key,
     )
 
-    # Return score corresponding to chosen option
-    score_dict = {opt[0]: opt[1] for opt in options}
-    return score_dict[choice]
+    st.markdown(
+        '<span class="lbl-disagree">Disagree</span>', unsafe_allow_html=True
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    return SCORE_MAP[choice]
 
 
 # --- 4. STREAMLIT UI ---
