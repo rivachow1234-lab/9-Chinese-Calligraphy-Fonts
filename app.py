@@ -13,7 +13,6 @@ st.set_page_config(
 )
 
 # --- FORCE INITIALIZE SESSION STATE (FIXES "STARTS AT DISAGREE") ---
-# This ensures the radio buttons always start at 4 (Neutral) on a fresh page load
 if "initialized" not in st.session_state:
     for i in range(1, 11):
         st.session_state[f"q{i}"] = 4
@@ -131,6 +130,30 @@ def apply_custom_styling():
         div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(4) input[type="radio"] {{
             width: 11px;
             height: 11px;
+        }}
+
+        /* --- CUSTOM SUBMIT BUTTON STYLING --- */
+        div[data-testid="stFormSubmitButton"] button {{
+            background-color: #EBE7DE !important; /* Light rice-paper color */
+            color: #2C2A29 !important; /* Dark text */
+            border: 1px solid rgba(180, 175, 165, 0.6) !important;
+            font-size: 0.85rem !important; /* Smaller font for mobile */
+            padding: 0.5rem 1rem !important;
+            width: 100% !important; /* Fits mobile screen */
+            border-radius: 8px !important;
+            transition: background-color 0.2s ease !important;
+        }}
+        
+        div[data-testid="stFormSubmitButton"] button:hover {{
+            background-color: #DCD6CC !important; /* Slightly darker on hover */
+            color: #2C2A29 !important;
+            border-color: rgba(180, 175, 165, 0.9) !important;
+        }}
+
+        /* Force the text inside the button to be smaller */
+        div[data-testid="stFormSubmitButton"] button p {{
+            font-size: 0.85rem !important;
+            font-weight: 600 !important;
         }}
 
         /* Falling Hearts Animation */
@@ -333,7 +356,6 @@ LIKERT_MAPPING = {
 def mbti_bubbles(question_text, key):
     st.markdown(f"**{question_text}**")
     
-    # FIXED: Use native Streamlit container with a unique key for CSS targeting
     with st.container(border=True, key=f"scale_row_{key}"):
         col_l, col_m, col_r = st.columns([0.8, 5, 0.8])
         with col_l:
@@ -342,7 +364,7 @@ def mbti_bubbles(question_text, key):
             choice = st.radio(
                 label=question_text,
                 options=[1, 2, 3, 4, 5, 6, 7],
-                index=3,  # Sets default to 4 (Neutral)
+                index=3,  
                 horizontal=True,
                 label_visibility="collapsed",
                 format_func=lambda x: "",
