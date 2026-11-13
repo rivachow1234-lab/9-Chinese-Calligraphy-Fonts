@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 
-# --- HELPER: BACKGROUND, TIMES NEW ROMAN, STYLING & ANIMATIONS ---
+# --- HELPER: BACKGROUND, MBTI BUBBLES & CUSTOM ANIMATIONS ---
 def apply_custom_styling():
     local_bg_path = "asset/ink_mountains.jpg"
     if os.path.exists(local_bg_path):
@@ -26,11 +26,6 @@ def apply_custom_styling():
     st.markdown(
         f"""
         <style>
-        /* Global Font Override to Times New Roman */
-        html, body, [class*="st-"] {{
-            font-family: 'Times New Roman', Times, serif !important;
-        }}
-
         /* Ink Wash Mountains Background */
         .stApp {{
             background-image: linear-gradient(rgba(245, 243, 238, 0.78), rgba(245, 243, 238, 0.85)), {bg_css};
@@ -41,7 +36,7 @@ def apply_custom_styling():
 
         /* Frosted Rice-Paper Container for Readability */
         .block-container {{
-            background-color: rgba(255, 253, 249, 0.92);
+            background-color: rgba(255, 253, 249, 0.90);
             padding: 2.5rem 2rem;
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
@@ -50,69 +45,32 @@ def apply_custom_styling():
             border: 1px solid rgba(180, 175, 165, 0.4);
         }}
 
-        /* 16Personalities Style Scale Wrapper Box */
-        .scale-wrapper {{
+        /* MBTI-Style Horizontal Radio Bubbles */
+        div[role="radiogroup"] {{
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            background-color: rgba(242, 239, 233, 0.75);
-            padding: 14px 20px;
+            align-items: center;
+            background-color: rgba(242, 239, 233, 0.7);
+            padding: 12px 16px;
             border-radius: 12px;
             border: 1px solid rgba(180, 175, 165, 0.35);
-            margin-bottom: 16px;
+            margin-bottom: 14px;
+            gap: 6px;
         }}
-        .lbl-agree {{
-            font-family: 'Times New Roman', Times, serif;
-            font-weight: bold;
-            color: #1b4332;
-            font-size: 1rem;
-            min-width: 65px;
-            z-index: 2;
-        }}
-        .lbl-disagree {{
-            font-family: 'Times New Roman', Times, serif;
-            font-weight: bold;
-            color: #3c096c;
-            font-size: 1rem;
-            min-width: 75px;
-            text-align: right;
-            z-index: 2;
-        }}
-
-        /* Fix Streamlit Radio Group alignment to span evenly between Agree & Disagree */
-        div[data-testid="stRadio"] {{
-            flex-grow: 1;
-            margin: 0 24px !important;
-        }}
-        div[data-testid="stRadio"] div[role="radiogroup"] {{
-            display: flex !important;
-            flex-direction: row !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            width: 100% !important;
-            margin: 0 !important;
-            background: transparent !important;
-        }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label {{
-            cursor: pointer !important;
-            padding: 0 !important;
+        div[role="radiogroup"] label {{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.82rem;
+            padding: 4px 6px;
+            border-radius: 8px;
             transition: transform 0.15s ease;
         }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label:hover {{
-            transform: scale(1.15);
+        div[role="radiogroup"] label:hover {{
+            transform: scale(1.06);
         }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label p {{
-            display: none !important;
-        }}
-
-        /* Sizing and Green-to-Purple gradient accent colors for the 7 radio buttons */
-        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(1) input {{ width: 28px; height: 28px; accent-color: #1b4332; }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(2) input {{ width: 23px; height: 23px; accent-color: #2d6a4f; }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(3) input {{ width: 18px; height: 18px; accent-color: #52b788; }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(4) input {{ width: 13px; height: 13px; accent-color: #6c757d; }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(5) input {{ width: 18px; height: 18px; accent-color: #7b2cbf; }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(6) input {{ width: 23px; height: 23px; accent-color: #560bad; }}
-        div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(7) input {{ width: 28px; height: 28px; accent-color: #3c096c; }}
 
         /* Falling Hearts Animation */
         @keyframes fall {{
@@ -162,6 +120,8 @@ def trigger_hearts():
 apply_custom_styling()
 
 # --- 1. CONFIGURATION & FONT MAPPINGS ---
+# Keys 0..8 correspond to KMeans internal cluster indices and asset/font_0..8 filenames.
+# Display cluster IDs are shifted to 1..9 in the UI.
 FONT_MAPPINGS = {
     0: {
         "name": "Small Seal Script (小篆)",
@@ -269,28 +229,32 @@ FONT_MAPPINGS = {
 # --- 2. INITIALIZE MODEL WITH SYNTHETIC DATA ---
 @st.cache_resource
 def train_kmeans_model():
+    """Generates synthetic training data representing 9 archetypes
+    and fits a KMeans model with 9 clusters.
+    """
     np.random.seed(42)
+    # 5 dimensions: [Structure, Tempo, Expression, Complexity, Adaptability]
     centers = np.array(
         [
-            [6.5, 2.0, 2.5, 6.5, 2.5],  # 0: Seal
-            [5.5, 3.5, 3.0, 5.0, 3.0],  # 1: Clerical
-            [6.5, 2.5, 4.0, 5.5, 2.5],  # 2: Yan Standard
-            [4.0, 4.0, 4.0, 4.0, 4.0],  # 3: Liu Standard
-            [3.0, 5.0, 5.0, 3.0, 6.0],  # 4: Smooth Running
-            [2.5, 6.0, 6.0, 2.5, 6.5],  # 5: Expressive Running
-            [1.5, 6.8, 6.8, 1.5, 6.5],  # 6: Cursive
-            [2.5, 4.0, 2.5, 1.8, 5.0],  # 7: Slender Gold
-            [5.0, 6.5, 6.5, 4.0, 5.0],  # 8: Heavy Splash Ink
+            [4.5, 1.5, 2.0, 4.8, 2.0],  # 0: Seal
+            [4.0, 2.5, 2.5, 3.5, 2.5],  # 1: Clerical
+            [4.5, 2.0, 3.0, 4.0, 2.0],  # 2: Yan Standard
+            [3.0, 3.0, 3.0, 3.0, 3.0],  # 3: Liu Standard
+            [2.5, 3.5, 3.5, 2.5, 4.0],  # 4: Smooth Running
+            [2.0, 4.0, 4.0, 2.0, 4.5],  # 5: Expressive Running
+            [1.5, 4.8, 4.8, 1.5, 4.5],  # 6: Cursive
+            [2.0, 3.0, 2.0, 1.2, 3.5],  # 7: Slender Gold
+            [3.5, 4.5, 4.5, 3.0, 3.5],  # 8: Heavy Splash Ink
         ]
     )
 
     data = []
     for center in centers:
-        cluster_points = np.random.normal(loc=center, scale=0.5, size=(30, 5))
+        cluster_points = np.random.normal(loc=center, scale=0.4, size=(30, 5))
         data.append(cluster_points)
 
     X = np.vstack(data)
-    X = np.clip(X, 1.0, 7.0)
+    X = np.clip(X, 1.0, 5.0)
 
     kmeans = KMeans(n_clusters=9, random_state=42, n_init=10)
     kmeans.fit(X)
@@ -299,99 +263,87 @@ def train_kmeans_model():
 
 model = train_kmeans_model()
 
-# --- 3. MBTI 7-POINT SCALE HELPER ---
-LIKERT_OPTIONS_7 = [
-    "Strongly Agree",
-    "Agree",
-    "Somewhat Agree",
-    "Neutral",
-    "Somewhat Disagree",
-    "Disagree",
-    "Strongly Disagree",
-]
-
-SCORE_MAP = {
-    "Strongly Agree": 7.0,
-    "Agree": 6.0,
-    "Somewhat Agree": 5.0,
-    "Neutral": 4.0,
-    "Somewhat Disagree": 3.0,
-    "Disagree": 2.0,
+# --- 3. MBTI BUBBLE LIKERT SCALE HELPER ---
+LIKERT_OPTIONS = {
     "Strongly Disagree": 1.0,
+    "Disagree": 2.0,
+    "Neutral": 3.0,
+    "Agree": 4.0,
+    "Strongly Agree": 5.0,
 }
 
 
-def mbti_scale_question(question_text, key):
+def mbti_bubbles(question_text, key):
     st.markdown(f"**{question_text}**")
-    st.markdown('<div class="scale-wrapper">', unsafe_allow_html=True)
-    st.markdown('<span class="lbl-agree">Agree</span>', unsafe_allow_html=True)
-
     choice = st.radio(
         label=question_text,
-        options=LIKERT_OPTIONS_7,
-        index=3,  # Default to Neutral
+        options=list(LIKERT_OPTIONS.keys()),
+        index=2,  # Default to Neutral (middle bubble)
         horizontal=True,
         label_visibility="collapsed",
         key=key,
     )
-
-    st.markdown(
-        '<span class="lbl-disagree">Disagree</span>', unsafe_allow_html=True
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    return SCORE_MAP[choice]
+    return LIKERT_OPTIONS[choice]
 
 
 # --- 4. STREAMLIT UI ---
 st.title("🖌️ Chinese Calligraphy Personality Matcher")
 st.markdown(
-    "Select the bubble that best reflects your stance on each of the **10 distinct statements** below. "
-    "Our K-Means clustering model analyzes your profile across 5 psychological dimensions to match you with **1 of 9 Chinese Calligraphy Styles**."
+    "Select the bubble that best reflects how much you agree or disagree with each of the **10 statements** below. "
+    "Our K-Means clustering model will analyze your responses across 5 psychological dimensions to match you with **1 of 9 Chinese Calligraphy Styles**."
 )
 st.markdown("---")
 
 with st.form("calligraphy_form"):
     st.subheader("Your Personality Assessment")
 
-    q1 = mbti_scale_question(
-        "1. I strictly adhere to detailed daily checklists and rigid schedules to manage my time.",
+    # Dimension 1: Structure & Order (Q1 & Q2)
+    q1 = mbti_bubbles(
+        "1. I prefer clear rules, neat organization, and structured plans over creative chaos.",
         "q1",
     )
-    q2 = mbti_scale_question(
-        "2. When planning a new project, I prefer establishing an unchanging roadmap rather than adapting on the fly.",
+    q2 = mbti_bubbles(
+        "2. I feel most comfortable when my daily schedule and workspace are well-ordered.",
         "q2",
     )
-    q3 = mbti_scale_question(
-        "3. I make important decisions instantly based on my immediate intuition rather than lengthy deliberation.",
+
+    # Dimension 2: Tempo & Energy (Q3 & Q4)
+    q3 = mbti_bubbles(
+        "3. I move, think, and make decisions quickly, often acting on instinct.",
         "q3",
     )
-    q4 = mbti_scale_question(
-        "4. I feel deeply impatient and frustrated when daily tasks or conversations move too slowly.",
+    q4 = mbti_bubbles(
+        "4. I thrive in fast-paced environments rather than taking a slow, methodical approach.",
         "q4",
     )
-    q5 = mbti_scale_question(
-        "5. I openly and passionately wear my heart on my sleeve, letting everyone around me know my exact emotional state.",
+
+    # Dimension 3: Expression & Emotion (Q5 & Q6)
+    q5 = mbti_bubbles(
+        "5. I express my emotions outwardly and passionately rather than keeping them bottled up.",
         "q5",
     )
-    q6 = mbti_scale_question(
-        "6. When strong emotions hit me, I express them outward with intense vocal and physical energy rather than keeping them internal.",
+    q6 = mbti_bubbles(
+        "6. People around me can easily tell how I am feeling from my energy and tone.",
         "q6",
     )
-    q7 = mbti_scale_question(
-        "7. I am profoundly captivated by ancient historical archives, traditional philosophies, and intricate cultural heritage.",
+
+    # Dimension 4: Complexity vs. Minimalism (Q7 & Q8)
+    q7 = mbti_bubbles(
+        "7. I am deeply fascinated by history, rich tradition, and intricate details.",
         "q7",
     )
-    q8 = mbti_scale_question(
-        "8. I prefer ornate, highly detailed craftsmanship over sleek, bare, modern minimalist aesthetics.",
+    q8 = mbti_bubbles(
+        "8. I appreciate layered, ornate craftsmanship more than sleek, bare minimalism.",
         "q8",
     )
-    q9 = mbti_scale_question(
-        "9. Sudden and radical changes in my environment excite and energize me instead of causing me stress.",
+
+    # Dimension 5: Adaptability & Flow (Q9 & Q10)
+    q9 = mbti_bubbles(
+        "9. I adapt smoothly to sudden changes rather than sticking rigidly to my original plan.",
         "q9",
     )
-    q10 = mbti_scale_question(
-        "10. I effortlessly throw away my original plans and improvise the moment unexpected obstacles arise.",
+    q10 = mbti_bubbles(
+        "10. I enjoy improvising in the moment when unexpected opportunities arise.",
         "q10",
     )
 
@@ -399,6 +351,7 @@ with st.form("calligraphy_form"):
 
 # --- 5. PREDICTION & RESULT DISPLAY ---
 if submitted:
+    # Average each pair of questions into the 5 core dimensions
     dim_structure = (q1 + q2) / 2.0
     dim_tempo = (q3 + q4) / 2.0
     dim_expression = (q5 + q6) / 2.0
@@ -409,10 +362,12 @@ if submitted:
         [[dim_structure, dim_tempo, dim_expression, dim_complexity, dim_adaptability]]
     )
 
+    # Predict internal cluster (0..8) and convert to 1..9 for display
     cluster_idx = int(model.predict(user_vector)[0])
     display_cluster_num = cluster_idx + 1
     font_info = FONT_MAPPINGS[cluster_idx]
 
+    # Trigger falling hearts
     trigger_hearts()
 
     st.markdown("---")
