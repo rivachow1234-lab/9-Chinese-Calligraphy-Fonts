@@ -13,10 +13,8 @@ st.set_page_config(
 )
 
 
-# --- HELPER: BACKGROUND & CUSTOM ANIMATIONS ---
+# --- HELPER: BACKGROUND, MBTI BUBBLES & CUSTOM ANIMATIONS ---
 def apply_custom_styling():
-    # Option A: If you save a local ink wash image at "asset/ink_mountains.jpg", it will load it.
-    # Option B: Otherwise, it falls back to a curated Unsplash ink-wash mountain landscape URL.
     local_bg_path = "asset/ink_mountains.jpg"
     if os.path.exists(local_bg_path):
         with open(local_bg_path, "rb") as f:
@@ -38,13 +36,40 @@ def apply_custom_styling():
 
         /* Frosted Rice-Paper Container for Readability */
         .block-container {{
-            background-color: rgba(255, 253, 249, 0.88);
+            background-color: rgba(255, 253, 249, 0.90);
             padding: 2.5rem 2rem;
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
             margin-top: 2rem;
             margin-bottom: 2rem;
             border: 1px solid rgba(180, 175, 165, 0.4);
+        }}
+
+        /* MBTI-Style Horizontal Radio Bubbles */
+        div[role="radiogroup"] {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(242, 239, 233, 0.7);
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(180, 175, 165, 0.35);
+            margin-bottom: 14px;
+            gap: 6px;
+        }}
+        div[role="radiogroup"] label {{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.82rem;
+            padding: 4px 6px;
+            border-radius: 8px;
+            transition: transform 0.15s ease;
+        }}
+        div[role="radiogroup"] label:hover {{
+            transform: scale(1.06);
         }}
 
         /* Falling Hearts Animation */
@@ -95,58 +120,106 @@ def trigger_hearts():
 apply_custom_styling()
 
 # --- 1. CONFIGURATION & FONT MAPPINGS ---
+# Keys 0..8 correspond to KMeans internal cluster indices and asset/font_0..8 filenames.
+# Display cluster IDs are shifted to 1..9 in the UI.
 FONT_MAPPINGS = {
     0: {
         "name": "Small Seal Script (小篆)",
-        "desc": "Elegant, symmetrical, and deeply historic. Ideal for traditionalists who value structure and heritage.",
+        "desc": (
+            "Rooted in the Qin Dynasty unification of Chinese writing, Small Seal Script is celebrated for its "
+            "elongated proportions, symmetrical balance, and deliberate, unhurried brushwork. "
+            "You are a thoughtful traditionalist who values heritage, precision, and enduring principles. "
+            "Rather than chasing fleeting trends, you find deep satisfaction in careful craftsmanship, ritual, "
+            "and building things meant to stand the test of time."
+        ),
         "traits": "High Structure, High History",
         "image": "asset/font_0_seal.png",
     },
     1: {
         "name": "Clerical Script (隸書)",
-        "desc": "Flat, wide, orderly, and official. Perfect for pragmatic, disciplined, and steady personalities.",
+        "desc": (
+            "Born during the Han Dynasty to bring clarity and efficiency to official records, Clerical Script "
+            "features broad, grounded horizontal strokes and a calm, rhythmic cadence. "
+            "You possess a pragmatic, steady, and grounded temperament. People rely on you for your fairness, "
+            "clarity of thought, and ability to bring order to complex situations without unnecessary drama."
+        ),
         "traits": "High Structure, Moderate Tempo",
         "image": "asset/font_1_clerical.png",
     },
     2: {
         "name": "Yan Style Standard Script (顏體楷書)",
-        "desc": "Bold, dignified, and rigorous. Suits perfectionists who command respect and uphold strong principles.",
+        "desc": (
+            "Created by Tang Dynasty master Yan Zhenqing, this iconic script is muscular, upright, and monumental, "
+            "with thick vertical pillars and firm, unwavering structure. "
+            "You are a principled leader with strong moral conviction and quiet authority. You hold yourself "
+            "and others to high standards, approaching responsibilities with integrity, resilience, and rock-solid dependability."
+        ),
         "traits": "High Structure, Low Impulsivity",
         "image": "asset/font_2_yan.png",
     },
     3: {
         "name": "Liu Style Standard Script (柳體楷書)",
-        "desc": "Clean, clear, and balanced. Great for steady, reliable, and modern professionals.",
+        "desc": (
+            "Pioneered by Liu Gongquan, Liu Style is famed for its 'bony' strength—crisp, clean, well-proportioned "
+            "strokes that balance discipline with agility. "
+            "You are a composed, versatile, and well-rounded individual who thrives in both structured and collaborative settings. "
+            "You value clarity, fairness, and poise, maintaining calm focus even when navigating competing priorities."
+        ),
         "traits": "Balanced Structure & Flow",
         "image": "asset/font_3_liu.png",
     },
     4: {
         "name": "Smooth Running Script (淡雅行書)",
-        "desc": "Smooth, practical, and graceful. Fits adaptable diplomats who value balance and ease.",
+        "desc": (
+            "Bridging the legibility of Standard Script with the grace of Cursive, Smooth Running Script flows naturally "
+            "from stroke to stroke like water gliding over smooth stones. "
+            "You are an adaptable diplomat who values harmony, grace, and practical ease. You read rooms effortlessly, "
+            "adjust smoothly to shifting circumstances, and bring warmth and cohesion wherever you go."
+        ),
         "traits": "Moderate Flow, High Adaptability",
         "image": "asset/font_4_smooth_running.png",
     },
     5: {
         "name": "Expressive Running Script (狂行書)",
-        "desc": "Energetic, fast, and dynamic. Tailored for creative free spirits who love spontaneity.",
+        "desc": (
+            "Dynamic, sweeping, and alive with momentum, Expressive Running Script captures thought in rapid motion, "
+            "linking characters with energetic, spontaneous turns of the brush. "
+            "You are a spirited creative who thrives on inspiration, novelty, and fast-paced exploration. "
+            "Rules feel like starting points rather than limits to you, and your enthusiasm naturally energizes those around you."
+        ),
         "traits": "High Flow, High Expression",
         "image": "asset/font_5_expressive_running.png",
     },
     6: {
         "name": "Cursive Script (草書)",
-        "desc": "Abstract, emotional, and sweeping. Perfect for passionate artists driven by raw emotion.",
+        "desc": (
+            "Unbound by strict stroke-by-stroke conventions, Cursive Script transforms characters into pure rhythm, "
+            "velocity, and emotional release—often written in a single breathless surge of ink. "
+            "You are a passionate, intuitive visionary driven by raw emotion and creative instinct. "
+            "You live intensely in the moment, value authenticity above conformity, and express your inner world boldly."
+        ),
         "traits": "High Energy, High Extroversion",
         "image": "asset/font_6_cursive.png",
     },
     7: {
         "name": "Slender Gold Calligraphy (瘦金體書法)",
-        "desc": "Simplified, artistic, and minimalist. Matches modern minimalists who appreciate clean aesthetics.",
+        "desc": (
+            "Invented by Emperor Huizong of Song, Slender Gold is unmistakable for its razor-sharp, metallic, "
+            "elongated strokes that resemble fine gold wire and bamboo leaves. "
+            "You are an aesthete and modern minimalist with a keen eye for elegance, nuance, and clean design. "
+            "Independent and discerning, you prefer refined simplicity over clutter and appreciate subtle beauty others might miss."
+        ),
         "traits": "Low Complexity, High Flow",
         "image": "asset/font_7_slender.png",
     },
     8: {
         "name": "Heavy Splash Ink Style (重墨書法)",
-        "desc": "Raw, heavy-set, and commanding. Designed for bold mavericks with an unyielding presence.",
+        "desc": (
+            "Characterized by saturated, heavyweight brushloads, bold contrasts, and unapologetic presence on the paper, "
+            "Heavy Splash Ink turns every character into a dramatic visual statement. "
+            "You are a fearless maverick with a commanding, unforgettable presence. Unafraid to stand apart from the crowd, "
+            "you tackle challenges head-on with raw confidence, originality, and decisive impact."
+        ),
         "traits": "High Boldness, Unconventional",
         "image": "asset/font_8_splash_ink.png",
     },
@@ -190,7 +263,7 @@ def train_kmeans_model():
 
 model = train_kmeans_model()
 
-# --- 3. MBTI LIKERT SCALE HELPER ---
+# --- 3. MBTI BUBBLE LIKERT SCALE HELPER ---
 LIKERT_OPTIONS = {
     "Strongly Disagree": 1.0,
     "Disagree": 2.0,
@@ -200,11 +273,14 @@ LIKERT_OPTIONS = {
 }
 
 
-def mbti_slider(label, key):
-    choice = st.select_slider(
-        label,
+def mbti_bubbles(question_text, key):
+    st.markdown(f"**{question_text}**")
+    choice = st.radio(
+        label=question_text,
         options=list(LIKERT_OPTIONS.keys()),
-        value="Neutral",
+        index=2,  # Default to Neutral (middle bubble)
+        horizontal=True,
+        label_visibility="collapsed",
         key=key,
     )
     return LIKERT_OPTIONS[choice]
@@ -213,7 +289,8 @@ def mbti_slider(label, key):
 # --- 4. STREAMLIT UI ---
 st.title("🖌️ Chinese Calligraphy Personality Matcher")
 st.markdown(
-    "Reflect on the **10 statements** below. Our K-Means clustering model will analyze your responses across 5 psychological dimensions to match you with **1 of 9 Chinese Calligraphy Styles**."
+    "Select the bubble that best reflects how much you agree or disagree with each of the **10 statements** below. "
+    "Our K-Means clustering model will analyze your responses across 5 psychological dimensions to match you with **1 of 9 Chinese Calligraphy Styles**."
 )
 st.markdown("---")
 
@@ -221,51 +298,51 @@ with st.form("calligraphy_form"):
     st.subheader("Your Personality Assessment")
 
     # Dimension 1: Structure & Order (Q1 & Q2)
-    q1 = mbti_slider(
+    q1 = mbti_bubbles(
         "1. I prefer clear rules, neat organization, and structured plans over creative chaos.",
         "q1",
     )
-    q2 = mbti_slider(
+    q2 = mbti_bubbles(
         "2. I feel most comfortable when my daily schedule and workspace are well-ordered.",
         "q2",
     )
 
     # Dimension 2: Tempo & Energy (Q3 & Q4)
-    q3 = mbti_slider(
+    q3 = mbti_bubbles(
         "3. I move, think, and make decisions quickly, often acting on instinct.",
         "q3",
     )
-    q4 = mbti_slider(
+    q4 = mbti_bubbles(
         "4. I thrive in fast-paced environments rather than taking a slow, methodical approach.",
         "q4",
     )
 
     # Dimension 3: Expression & Emotion (Q5 & Q6)
-    q5 = mbti_slider(
+    q5 = mbti_bubbles(
         "5. I express my emotions outwardly and passionately rather than keeping them bottled up.",
         "q5",
     )
-    q6 = mbti_slider(
+    q6 = mbti_bubbles(
         "6. People around me can easily tell how I am feeling from my energy and tone.",
         "q6",
     )
 
     # Dimension 4: Complexity vs. Minimalism (Q7 & Q8)
-    q7 = mbti_slider(
+    q7 = mbti_bubbles(
         "7. I am deeply fascinated by history, rich tradition, and intricate details.",
         "q7",
     )
-    q8 = mbti_slider(
+    q8 = mbti_bubbles(
         "8. I appreciate layered, ornate craftsmanship more than sleek, bare minimalism.",
         "q8",
     )
 
     # Dimension 5: Adaptability & Flow (Q9 & Q10)
-    q9 = mbti_slider(
+    q9 = mbti_bubbles(
         "9. I adapt smoothly to sudden changes rather than sticking rigidly to my original plan.",
         "q9",
     )
-    q10 = mbti_slider(
+    q10 = mbti_bubbles(
         "10. I enjoy improvising in the moment when unexpected opportunities arise.",
         "q10",
     )
@@ -285,11 +362,12 @@ if submitted:
         [[dim_structure, dim_tempo, dim_expression, dim_complexity, dim_adaptability]]
     )
 
-    # Predict cluster
-    cluster_id = model.predict(user_vector)[0]
-    font_info = FONT_MAPPINGS[cluster_id]
+    # Predict internal cluster (0..8) and convert to 1..9 for display
+    cluster_idx = int(model.predict(user_vector)[0])
+    display_cluster_num = cluster_idx + 1
+    font_info = FONT_MAPPINGS[cluster_idx]
 
-    # Trigger falling hearts instead of balloons
+    # Trigger falling hearts
     trigger_hearts()
 
     st.markdown("---")
@@ -297,7 +375,7 @@ if submitted:
 
     col1, col2 = st.columns([1, 2])
     with col1:
-        st.metric(label="Assigned Cluster ID", value=f"Cluster #{cluster_id}")
+        st.metric(label="Assigned Cluster ID", value=f"Cluster #{display_cluster_num}")
     with col2:
         st.success(f"**Recommended Style:** {font_info['name']}")
 
@@ -318,7 +396,7 @@ if submitted:
         distances = model.transform(user_vector)[0]
         dist_df = pd.DataFrame(
             {
-                "Cluster": list(FONT_MAPPINGS.keys()),
+                "Cluster": [k + 1 for k in FONT_MAPPINGS.keys()],
                 "Font Style": [f["name"] for f in FONT_MAPPINGS.values()],
                 "Distance Score (Lower is Closer)": distances,
             }
