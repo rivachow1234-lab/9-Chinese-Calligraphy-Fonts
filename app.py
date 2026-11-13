@@ -51,16 +51,47 @@ def apply_custom_styling():
             color: #2C2A29 !important;
         }}
 
-        /* 16Personality-Style Horizontal Radio Group */
-        div[role="radiogroup"] {{
+        /* 16Personality-Style Scale Layout Container */
+        .scale-container {{
             display: flex;
-            justify-content: space-around;
             align-items: center;
+            justify-content: center;
+            gap: 16px;
             background-color: rgba(242, 239, 233, 0.7);
-            padding: 10px 16px;
+            padding: 10px 20px;
             border-radius: 12px;
             border: 1px solid rgba(180, 175, 165, 0.35);
             margin-bottom: 14px;
+        }}
+
+        .scale-label-left {{
+            font-weight: 600;
+            color: #2C2A29;
+            font-size: 0.95rem;
+            width: 70px;
+            text-align: right;
+            user-select: none;
+        }}
+
+        .scale-label-right {{
+            font-weight: 600;
+            color: #2C2A29;
+            font-size: 0.95rem;
+            width: 70px;
+            text-align: left;
+            user-select: none;
+        }}
+
+        /* Radio Group adjustments inside the scale container */
+        div[role="radiogroup"] {{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: transparent !important;
+            padding: 0 !important;
+            border: none !important;
+            margin-bottom: 0 !important;
+            gap: 16px;
         }}
         div[role="radiogroup"] label {{
             cursor: pointer;
@@ -297,27 +328,36 @@ LIKERT_MAPPING = {
 
 def mbti_bubbles(question_text, key):
     st.markdown(f"**{question_text}**")
-    col_l, col_m, col_r = st.columns([1, 8, 1])
-    with col_l:
-        st.markdown(
-            "<div style='text-align: right; padding-top: 8px; font-weight: 600; color: #2C2A29; font-size: 0.95rem;'>Agree</div>",
-            unsafe_allow_html=True,
-        )
-    with col_r:
-        st.markdown(
-            "<div style='text-align: left; padding-top: 8px; font-weight: 600; color: #2C2A29; font-size: 0.95rem;'>Disagree</div>",
-            unsafe_allow_html=True,
-        )
-    with col_m:
-        choice = st.radio(
-            label=question_text,
-            options=[1, 2, 3, 4, 5, 6, 7],
-            index=3,  # Default to Neutral (middle bubble)
-            horizontal=True,
-            label_visibility="collapsed",
-            format_func=lambda x: "",
-            key=key,
-        )
+    
+    # Render custom HTML structure for centered layout with Agree on left and Disagree on right
+    st.markdown(
+        f"""
+        <div class="scale-container">
+            <div class="scale-label-left">Agree</div>
+            <div style="display: flex; justify-content: center; align-items: center;">
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    choice = st.radio(
+        label=question_text,
+        options=[1, 2, 3, 4, 5, 6, 7],
+        index=3,  # Default to Neutral (middle bubble)
+        horizontal=True,
+        label_visibility="collapsed",
+        format_func=lambda x: "",
+        key=key,
+    )
+    
+    st.markdown(
+        """
+            </div>
+            <div class="scale-label-right">Disagree</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    
     return LIKERT_MAPPING[choice]
 
 
