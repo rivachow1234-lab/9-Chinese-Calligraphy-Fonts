@@ -51,31 +51,14 @@ def apply_custom_styling():
             color: #2C2A29 !important;
         }}
 
-        /* Scale Row Container Background */
-        .scale-row {{
+        /* Automatically style the horizontal row container for each scale */
+        div[data-testid="stHorizontalBlock"]:has(div[role="radiogroup"]) {{
             background-color: rgba(242, 239, 233, 0.7);
-            padding: 8px 12px;
+            padding: 10px 16px;
             border-radius: 12px;
             border: 1px solid rgba(180, 175, 165, 0.35);
             margin-bottom: 16px;
-        }}
-
-        .scale-text-agree {{
-            font-weight: 600;
-            color: #2C2A29;
-            font-size: 0.95rem;
-            text-align: right;
-            padding-top: 6px;
-            user-select: none;
-        }}
-
-        .scale-text-disagree {{
-            font-weight: 600;
-            color: #2C2A29;
-            font-size: 0.95rem;
-            text-align: left;
-            padding-top: 6px;
-            user-select: none;
+            align-items: center !important;
         }}
 
         /* Force Streamlit radio group inside columns to render horizontally and centered */
@@ -329,23 +312,27 @@ LIKERT_MAPPING = {
 def mbti_bubbles(question_text, key):
     st.markdown(f"**{question_text}**")
     
-    st.markdown('<div class="scale-row">', unsafe_allow_html=True)
-    col_l, col_m, col_r = st.columns([0.8, 5, 0.8])
+    col_l, col_m, col_r = st.columns([1.2, 7.6, 1.2])
     with col_l:
-        st.markdown('<div class="scale-text-agree">Agree</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div style="text-align: right; padding-top: 4px; font-weight: 600; color: #2C2A29; user-select: none;">Agree</div>',
+            unsafe_allow_html=True,
+        )
     with col_m:
         choice = st.radio(
             label=question_text,
             options=[1, 2, 3, 4, 5, 6, 7],
-            index=3,  # Starts in the middle (4th bubble)
+            index=3,  # Starts in the middle neutral (4th bubble)
             horizontal=True,
             label_visibility="collapsed",
             format_func=lambda x: "",
             key=key,
         )
     with col_r:
-        st.markdown('<div class="scale-text-disagree">Disagree</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div style="text-align: left; padding-top: 4px; font-weight: 600; color: #2C2A29; user-select: none;">Disagree</div>',
+            unsafe_allow_html=True,
+        )
     
     return LIKERT_MAPPING[choice]
 
