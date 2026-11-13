@@ -13,10 +13,10 @@ st.set_page_config(
 )
 
 # --- FORCE INITIALIZE SESSION STATE (FIXES "STARTS AT DISAGREE") ---
-if "initialized" not in st.session_state:
-    for i in range(1, 11):
+# This explicitly forces all questions to start at value 4 (Neutral)
+for i in range(1, 11):
+    if f"q{i}" not in st.session_state:
         st.session_state[f"q{i}"] = 4
-    st.session_state["initialized"] = True
 
 
 # --- HELPER: BACKGROUND, 16PERSONALITIES BUBBLES & CUSTOM ANIMATIONS ---
@@ -50,6 +50,7 @@ def apply_custom_styling():
             margin-bottom: 2rem;
             border: 1px solid rgba(180, 175, 165, 0.4);
             color: #2C2A29;
+            overflow-x: hidden; /* Prevents horizontal scrolling on mobile */
         }}
 
         /* Force dark text color across Streamlit typography elements */
@@ -57,7 +58,7 @@ def apply_custom_styling():
             color: #2C2A29 !important;
         }}
 
-        /* FIXED: Style the native Streamlit container to look like the scale row */
+        /* Style the native Streamlit container to look like the scale row */
         div[class*="st-key-scale_row_"] {{
             background-color: rgba(242, 239, 233, 0.7) !important;
             padding: 8px 12px !important;
@@ -85,7 +86,7 @@ def apply_custom_styling():
         }}
 
         /* Force Streamlit radio group inside columns to render horizontally and centered */
-        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] {{
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] {{
             display: flex !important;
             flex-direction: row !important;
             justify-content: center !important;
@@ -96,7 +97,7 @@ def apply_custom_styling():
             margin: 0 !important;
             gap: 14px !important;
         }}
-        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label {{
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label {{
             cursor: pointer;
             display: flex !important;
             align-items: center !important;
@@ -107,46 +108,41 @@ def apply_custom_styling():
             padding: 0 !important;
             margin: 0 !important;
         }}
-        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:hover {{
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:hover {{
             transform: scale(1.15);
         }}
 
         /* Varying bubble sizes for the 7-point scale */
-        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(1) input[type="radio"],
-        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(7) input[type="radio"] {{
-            width: 24px;
-            height: 24px;
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(1) input[type="radio"],
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(7) input[type="radio"] {{
+            width: 24px; height: 24px;
         }}
-        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(2) input[type="radio"],
-        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(6) input[type="radio"] {{
-            width: 19px;
-            height: 19px;
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(2) input[type="radio"],
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(6) input[type="radio"] {{
+            width: 19px; height: 19px;
         }}
-        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(3) input[type="radio"],
-        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(5) input[type="radio"] {{
-            width: 15px;
-            height: 15px;
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(3) input[type="radio"],
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(5) input[type="radio"] {{
+            width: 15px; height: 15px;
         }}
-        div[data-testid="stHorizontalBlock"] div[role="radiogroup"] > label:nth-child(4) input[type="radio"] {{
-            width: 11px;
-            height: 11px;
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(4) input[type="radio"] {{
+            width: 11px; height: 11px;
         }}
 
         /* --- CUSTOM SUBMIT BUTTON STYLING --- */
         div[data-testid="stFormSubmitButton"] button {{
-            background-color: #EBE7DE !important; /* Light rice-paper color */
-            color: #2C2A29 !important; /* Dark text */
+            background-color: #EBE7DE !important;
+            color: #2C2A29 !important;
             border: 1px solid rgba(180, 175, 165, 0.6) !important;
-            font-size: 0.85rem !important; /* Smaller font for mobile */
+            font-size: 0.85rem !important;
             padding: 0.5rem 1rem !important;
-            width: 100% !important; /* Fits mobile screen */
+            width: 100% !important;
             border-radius: 8px !important;
             transition: background-color 0.2s ease !important;
         }}
         
         div[data-testid="stFormSubmitButton"] button:hover {{
-            background-color: #DCD6CC !important; /* Slightly darker on hover */
-            color: #2C2A29 !important;
+            background-color: #DCD6CC !important;
             border-color: rgba(180, 175, 165, 0.9) !important;
         }}
 
@@ -155,49 +151,48 @@ def apply_custom_styling():
             font-weight: 600 !important;
         }}
 
-        /* --- MOBILE RESPONSIVE FIX (Prevents stacking) --- */
+        /* --- MOBILE RESPONSIVE FIX (Centers everything and prevents wrapping) --- */
         @media (max-width: 640px) {{
-            /* Force the columns to stay side-by-side for the scale rows */
+            /* Force the columns to stay side-by-side */
             div[class*="st-key-scale_row_"] div[data-testid="stHorizontalBlock"] {{
+                display: flex !important;
                 flex-direction: row !important;
                 flex-wrap: nowrap !important;
                 align-items: center !important;
-                gap: 2px !important;
+                justify-content: center !important; /* Centers the whole row */
+                gap: 0px !important;
+                width: 100% !important;
             }}
             
-            /* Reset column widths so they don't wrap */
+            /* Remove default padding/margins from columns so they don't push right */
             div[class*="st-key-scale_row_"] div[data-testid="column"] {{
-                width: auto !important;
-                min-width: 0 !important;
-            }}
-            
-            /* Allow the middle column (bubbles) to take up available space */
-            div[class*="st-key-scale_row_"] div[data-testid="column"]:nth-child(2) {{
-                flex: 1 1 auto !important;
+                padding: 0 !important;
+                margin: 0 !important;
             }}
 
-            /* Slightly smaller text for mobile labels */
+            /* Make text smaller and prevent wrapping */
             .scale-text-agree, .scale-text-disagree {{
                 font-size: 0.75rem !important;
-                padding-top: 4px !important;
+                padding-top: 8px !important;
+                white-space: nowrap !important;
             }}
 
-            /* Reduce gap between bubbles on mobile */
+            /* Reduce the gap between bubbles */
             div[class*="st-key-scale_row_"] div[role="radiogroup"] {{
-                gap: 4px !important;
+                gap: 2px !important; 
+                justify-content: space-evenly !important;
+            }}
+            
+            /* Scale down the bubbles slightly to ensure they fit on narrow screens */
+            div[class*="st-key-scale_row_"] div[role="radiogroup"] > label input[type="radio"] {{
+                transform: scale(0.85);
             }}
         }}
 
         /* Falling Hearts Animation */
         @keyframes fall {{
-            0% {{
-                transform: translateY(-10vh) rotate(0deg);
-                opacity: 1;
-            }}
-            100% {{
-                transform: translateY(105vh) rotate(360deg);
-                opacity: 0;
-            }}
+            0% {{ transform: translateY(-10vh) rotate(0deg); opacity: 1; }}
+            100% {{ transform: translateY(105vh) rotate(360deg); opacity: 0; }}
         }}
         .heart-particle {{
             position: fixed;
@@ -393,6 +388,7 @@ def mbti_bubbles(question_text, key):
         with col_l:
             st.markdown('<div class="scale-text-agree">Agree</div>', unsafe_allow_html=True)
         with col_m:
+            # index=3 ensures it starts on the 4th option (Neutral)
             choice = st.radio(
                 label=question_text,
                 options=[1, 2, 3, 4, 5, 6, 7],
