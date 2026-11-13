@@ -265,7 +265,6 @@ def mbti_bubbles(question_text, key_base):
             choice = st.radio(
                 label=question_text,
                 options=[1, 2, 3, 4, 5, 6, 7],
-                # index is no longer needed once session_state is set
                 horizontal=True,
                 label_visibility="collapsed",
                 format_func=lambda x: "",
