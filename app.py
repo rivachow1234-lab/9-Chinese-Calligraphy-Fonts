@@ -150,10 +150,42 @@ def apply_custom_styling():
             border-color: rgba(180, 175, 165, 0.9) !important;
         }}
 
-        /* Force the text inside the button to be smaller */
         div[data-testid="stFormSubmitButton"] button p {{
             font-size: 0.85rem !important;
             font-weight: 600 !important;
+        }}
+
+        /* --- MOBILE RESPONSIVE FIX (Prevents stacking) --- */
+        @media (max-width: 640px) {{
+            /* Force the columns to stay side-by-side for the scale rows */
+            div[class*="st-key-scale_row_"] div[data-testid="stHorizontalBlock"] {{
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                align-items: center !important;
+                gap: 2px !important;
+            }}
+            
+            /* Reset column widths so they don't wrap */
+            div[class*="st-key-scale_row_"] div[data-testid="column"] {{
+                width: auto !important;
+                min-width: 0 !important;
+            }}
+            
+            /* Allow the middle column (bubbles) to take up available space */
+            div[class*="st-key-scale_row_"] div[data-testid="column"]:nth-child(2) {{
+                flex: 1 1 auto !important;
+            }}
+
+            /* Slightly smaller text for mobile labels */
+            .scale-text-agree, .scale-text-disagree {{
+                font-size: 0.75rem !important;
+                padding-top: 4px !important;
+            }}
+
+            /* Reduce gap between bubbles on mobile */
+            div[class*="st-key-scale_row_"] div[role="radiogroup"] {{
+                gap: 4px !important;
+            }}
         }}
 
         /* Falling Hearts Animation */
