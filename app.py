@@ -253,6 +253,10 @@ def mbti_bubbles(question_text, key_base):
     # Add the session UUID to guarantee a fresh start on page reload
     unique_key = f"{key_base}_{session_uuid}"
     
+    # Force neutral (option 4) on first load of this key
+    if unique_key not in st.session_state:
+        st.session_state[unique_key] = 4
+    
     with st.container(border=True, key=f"scale_row_{unique_key}"):
         col_l, col_m, col_r = st.columns([0.8, 5, 0.8])
         with col_l:
@@ -261,7 +265,7 @@ def mbti_bubbles(question_text, key_base):
             choice = st.radio(
                 label=question_text,
                 options=[1, 2, 3, 4, 5, 6, 7],
-                index=3,  # Starts at 4 (Neutral)
+                # index is no longer needed once session_state is set
                 horizontal=True,
                 label_visibility="collapsed",
                 format_func=lambda x: "",
