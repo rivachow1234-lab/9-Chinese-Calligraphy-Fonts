@@ -12,6 +12,13 @@ st.set_page_config(
     layout="centered",
 )
 
+# --- FORCE INITIALIZE SESSION STATE (FIXES "STARTS AT DISAGREE") ---
+# This ensures the radio buttons always start at 4 (Neutral) on a fresh page load
+if "initialized" not in st.session_state:
+    for i in range(1, 11):
+        st.session_state[f"q{i}"] = 4
+    st.session_state["initialized"] = True
+
 
 # --- HELPER: BACKGROUND, 16PERSONALITIES BUBBLES & CUSTOM ANIMATIONS ---
 def apply_custom_styling():
@@ -51,13 +58,13 @@ def apply_custom_styling():
             color: #2C2A29 !important;
         }}
 
-        /* Scale Row Container Background */
-        .scale-row {{
-            background-color: rgba(242, 239, 233, 0.7);
-            padding: 8px 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(180, 175, 165, 0.35);
-            margin-bottom: 16px;
+        /* FIXED: Style the native Streamlit container to look like the scale row */
+        div[class*="st-key-scale_row_"] {{
+            background-color: rgba(242, 239, 233, 0.7) !important;
+            padding: 8px 12px !important;
+            border-radius: 12px !important;
+            border: 1px solid rgba(180, 175, 165, 0.35) !important;
+            margin-bottom: 16px !important;
         }}
 
         .scale-text-agree {{
@@ -281,21 +288,18 @@ FONT_MAPPINGS = {
 # --- 2. INITIALIZE MODEL WITH SYNTHETIC DATA ---
 @st.cache_resource
 def train_kmeans_model():
-    """Generates synthetic training data representing 9 archetypes
-    and fits a KMeans model with 9 clusters.
-    """
     np.random.seed(42)
     centers = np.array(
         [
-            [4.5, 1.5, 2.0, 4.8, 2.0],  # 0: Seal
-            [4.0, 2.5, 2.5, 3.5, 2.5],  # 1: Clerical
-            [4.5, 2.0, 3.0, 4.0, 2.0],  # 2: Yan Standard
-            [3.0, 3.0, 3.0, 3.0, 3.0],  # 3: Liu Standard
-            [2.5, 3.5, 3.5, 2.5, 4.0],  # 4: Smooth Running
-            [2.0, 4.0, 4.0, 2.0, 4.5],  # 5: Expressive Running
-            [1.5, 4.8, 4.8, 1.5, 4.5],  # 6: Cursive
-            [2.0, 3.0, 2.0, 1.2, 3.5],  # 7: Slender Gold
-            [3.5, 4.5, 4.5, 3.0, 3.5],  # 8: Heavy Splash Ink
+            [4.5, 1.5, 2.0, 4.8, 2.0],  
+            [4.0, 2.5, 2.5, 3.5, 2.5],  
+            [4.5, 2.0, 3.0, 4.0, 2.0],  
+            [3.0, 3.0, 3.0, 3.0, 3.0],  
+            [2.5, 3.5, 3.5, 2.5, 4.0],  
+            [2.0, 4.0, 4.0, 2.0, 4.5],  
+            [1.5, 4.8, 4.8, 1.5, 4.5],  
+            [2.0, 3.0, 2.0, 1.2, 3.5],  
+            [3.5, 4.5, 4.5, 3.0, 3.5],  
         ]
     )
 
@@ -329,23 +333,23 @@ LIKERT_MAPPING = {
 def mbti_bubbles(question_text, key):
     st.markdown(f"**{question_text}**")
     
-    st.markdown('<div class="scale-row">', unsafe_allow_html=True)
-    col_l, col_m, col_r = st.columns([0.8, 5, 0.8])
-    with col_l:
-        st.markdown('<div class="scale-text-agree">Agree</div>', unsafe_allow_html=True)
-    with col_m:
-        choice = st.radio(
-            label=question_text,
-            options=[1, 2, 3, 4, 5, 6, 7],
-            index=3,  # <--- THIS IS THE FIX: Starts at the 4th bubble (Neutral)
-            horizontal=True,
-            label_visibility="collapsed",
-            format_func=lambda x: "",
-            key=key,
-        )
-    with col_r:
-        st.markdown('<div class="scale-text-disagree">Disagree</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    # FIXED: Use native Streamlit container with a unique key for CSS targeting
+    with st.container(border=True, key=f"scale_row_{key}"):
+        col_l, col_m, col_r = st.columns([0.8, 5, 0.8])
+        with col_l:
+            st.markdown('<div class="scale-text-agree">Agree</div>', unsafe_allow_html=True)
+        with col_m:
+            choice = st.radio(
+                label=question_text,
+                options=[1, 2, 3, 4, 5, 6, 7],
+                index=3,  # Sets default to 4 (Neutral)
+                horizontal=True,
+                label_visibility="collapsed",
+                format_func=lambda x: "",
+                key=key,
+            )
+        with col_r:
+            st.markdown('<div class="scale-text-disagree">Disagree</div>', unsafe_allow_html=True)
     
     return LIKERT_MAPPING[choice]
 
@@ -361,61 +365,25 @@ st.markdown("---")
 with st.form("calligraphy_form"):
     st.subheader("Your Personality Assessment")
 
-    # Dimension 1: Structure & Order (Q1 & Q2)
-    q1 = mbti_bubbles(
-        "1. I prefer clear rules, neat organization, and structured plans over creative chaos.",
-        "q1",
-    )
-    q2 = mbti_bubbles(
-        "2. I feel most comfortable when my daily schedule and workspace are well-ordered.",
-        "q2",
-    )
+    q1 = mbti_bubbles("1. I prefer clear rules, neat organization, and structured plans over creative chaos.", "q1")
+    q2 = mbti_bubbles("2. I feel most comfortable when my daily schedule and workspace are well-ordered.", "q2")
 
-    # Dimension 2: Tempo & Energy (Q3 & Q4)
-    q3 = mbti_bubbles(
-        "3. I move, think, and make decisions quickly, often acting on instinct.",
-        "q3",
-    )
-    q4 = mbti_bubbles(
-        "4. I thrive in fast-paced environments rather than taking a slow, methodical approach.",
-        "q4",
-    )
+    q3 = mbti_bubbles("3. I move, think, and make decisions quickly, often acting on instinct.", "q3")
+    q4 = mbti_bubbles("4. I thrive in fast-paced environments rather than taking a slow, methodical approach.", "q4")
 
-    # Dimension 3: Expression & Emotion (Q5 & Q6)
-    q5 = mbti_bubbles(
-        "5. I express my emotions outwardly and passionately rather than keeping them bottled up.",
-        "q5",
-    )
-    q6 = mbti_bubbles(
-        "6. People around me can easily tell how I am feeling from my energy and tone.",
-        "q6",
-    )
+    q5 = mbti_bubbles("5. I express my emotions outwardly and passionately rather than keeping them bottled up.", "q5")
+    q6 = mbti_bubbles("6. People around me can easily tell how I am feeling from my energy and tone.", "q6")
 
-    # Dimension 4: Complexity vs. Minimalism (Q7 & Q8)
-    q7 = mbti_bubbles(
-        "7. I am deeply fascinated by history, rich tradition, and intricate details.",
-        "q7",
-    )
-    q8 = mbti_bubbles(
-        "8. I appreciate layered, ornate craftsmanship more than sleek, bare minimalism.",
-        "q8",
-    )
+    q7 = mbti_bubbles("7. I am deeply fascinated by history, rich tradition, and intricate details.", "q7")
+    q8 = mbti_bubbles("8. I appreciate layered, ornate craftsmanship more than sleek, bare minimalism.", "q8")
 
-    # Dimension 5: Adaptability & Flow (Q9 & Q10)
-    q9 = mbti_bubbles(
-        "9. I adapt smoothly to sudden changes rather than sticking rigidly to my original plan.",
-        "q9",
-    )
-    q10 = mbti_bubbles(
-        "10. I enjoy improvising in the moment when unexpected opportunities arise.",
-        "q10",
-    )
+    q9 = mbti_bubbles("9. I adapt smoothly to sudden changes rather than sticking rigidly to my original plan.", "q9")
+    q10 = mbti_bubbles("10. I enjoy improvising in the moment when unexpected opportunities arise.", "q10")
 
     submitted = st.form_submit_button("Find My Calligraphy Font!")
 
 # --- 5. PREDICTION & RESULT DISPLAY ---
 if submitted:
-    # Average each pair of questions into the 5 core dimensions
     dim_structure = (q1 + q2) / 2.0
     dim_tempo = (q3 + q4) / 2.0
     dim_expression = (q5 + q6) / 2.0
@@ -426,12 +394,10 @@ if submitted:
         [[dim_structure, dim_tempo, dim_expression, dim_complexity, dim_adaptability]]
     )
 
-    # Predict internal cluster (0..8) and convert to 1..9 for display
     cluster_idx = int(model.predict(user_vector)[0])
     display_cluster_num = cluster_idx + 1
     font_info = FONT_MAPPINGS[cluster_idx]
 
-    # Trigger falling hearts
     trigger_hearts()
 
     st.markdown("---")
