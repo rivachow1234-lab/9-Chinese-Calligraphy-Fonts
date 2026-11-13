@@ -55,10 +55,9 @@ def apply_custom_styling():
         .scale-container {{
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 16px;
+            justify-content: space-between;
             background-color: rgba(242, 239, 233, 0.7);
-            padding: 10px 20px;
+            padding: 12px 20px;
             border-radius: 12px;
             border: 1px solid rgba(180, 175, 165, 0.35);
             margin-bottom: 14px;
@@ -68,52 +67,55 @@ def apply_custom_styling():
             font-weight: 600;
             color: #2C2A29;
             font-size: 0.95rem;
-            width: 70px;
-            text-align: right;
             user-select: none;
+            min-width: 60px;
         }}
 
         .scale-label-right {{
             font-weight: 600;
             color: #2C2A29;
             font-size: 0.95rem;
-            width: 70px;
-            text-align: left;
             user-select: none;
+            min-width: 60px;
+            text-align: right;
         }}
 
-        /* Radio Group adjustments inside the scale container */
+        /* Force Streamlit radio group to render horizontally and centered */
         div[role="radiogroup"] {{
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: center !important;
+            align-items: center !important;
             background-color: transparent !important;
             padding: 0 !important;
             border: none !important;
             margin-bottom: 0 !important;
-            gap: 16px;
+            gap: 14px !important;
         }}
-        div[role="radiogroup"] label {{
+        div[role="radiogroup"] > label {{
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
             transition: transform 0.15s ease;
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
         }}
-        div[role="radiogroup"] label:hover {{
+        div[role="radiogroup"] > label:hover {{
             transform: scale(1.15);
         }}
 
         /* Varying bubble sizes for the 7-point scale */
         div[role="radiogroup"] > label:nth-child(1) input[type="radio"],
         div[role="radiogroup"] > label:nth-child(7) input[type="radio"] {{
-            width: 26px;
-            height: 26px;
+            width: 24px;
+            height: 24px;
         }}
         div[role="radiogroup"] > label:nth-child(2) input[type="radio"],
         div[role="radiogroup"] > label:nth-child(6) input[type="radio"] {{
-            width: 20px;
-            height: 20px;
+            width: 19px;
+            height: 19px;
         }}
         div[role="radiogroup"] > label:nth-child(3) input[type="radio"],
         div[role="radiogroup"] > label:nth-child(5) input[type="radio"] {{
@@ -314,7 +316,6 @@ def train_kmeans_model():
 model = train_kmeans_model()
 
 # --- 3. 16PERSONALITIES SCALE MAPPING ---
-# Maps the 7 options (1 = Strongly Agree, 7 = Strongly Disagree) to 1.0 - 5.0 scores
 LIKERT_MAPPING = {
     1: 5.0,
     2: 4.33,
@@ -329,15 +330,8 @@ LIKERT_MAPPING = {
 def mbti_bubbles(question_text, key):
     st.markdown(f"**{question_text}**")
     
-    # Render custom HTML structure for centered layout with Agree on left and Disagree on right
-    st.markdown(
-        f"""
-        <div class="scale-container">
-            <div class="scale-label-left">Agree</div>
-            <div style="display: flex; justify-content: center; align-items: center;">
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown('<div class="scale-container">', unsafe_allow_html=True)
+    st.markdown('<div class="scale-label-left">Agree</div>', unsafe_allow_html=True)
     
     choice = st.radio(
         label=question_text,
@@ -349,14 +343,8 @@ def mbti_bubbles(question_text, key):
         key=key,
     )
     
-    st.markdown(
-        """
-            </div>
-            <div class="scale-label-right">Disagree</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown('<div class="scale-label-right">Disagree</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
     
     return LIKERT_MAPPING[choice]
 
