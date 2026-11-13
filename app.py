@@ -12,11 +12,12 @@ st.set_page_config(
     layout="centered",
 )
 
-# --- FORCE INITIALIZE SESSION STATE (FIXES "STARTS AT DISAGREE") ---
-# This explicitly forces all questions to start at value 4 (Neutral)
+# --- FORCE RESET SESSION STATE (Fixes starting at Disagree) ---
+# Using _v2 keys to break old cached states
 for i in range(1, 11):
-    if f"q{i}" not in st.session_state:
-        st.session_state[f"q{i}"] = 4
+    key = f"q{i}_v2"
+    if key not in st.session_state:
+        st.session_state[key] = 4  # 4 is Neutral
 
 
 # --- HELPER: BACKGROUND, 16PERSONALITIES BUBBLES & CUSTOM ANIMATIONS ---
@@ -40,7 +41,7 @@ def apply_custom_styling():
             background-attachment: fixed;
         }}
 
-        /* Frosted Rice-Paper Container for Readability */
+        /* Frosted Rice-Paper Container */
         .block-container {{
             background-color: rgba(255, 253, 249, 0.90);
             padding: 2.5rem 2rem;
@@ -50,42 +51,35 @@ def apply_custom_styling():
             margin-bottom: 2rem;
             border: 1px solid rgba(180, 175, 165, 0.4);
             color: #2C2A29;
-            overflow-x: hidden; /* Prevents horizontal scrolling on mobile */
+            overflow-x: hidden; /* Prevents mobile horizontal scrolling */
         }}
 
-        /* Force dark text color across Streamlit typography elements */
+        /* Force dark text color */
         h1, h2, h3, h4, h5, h6, p, span, label, div[data-testid="stMarkdownContainer"] {{
             color: #2C2A29 !important;
         }}
 
-        /* Style the native Streamlit container to look like the scale row */
+        /* Scale Row Container */
         div[class*="st-key-scale_row_"] {{
             background-color: rgba(242, 239, 233, 0.7) !important;
             padding: 8px 12px !important;
             border-radius: 12px !important;
             border: 1px solid rgba(180, 175, 165, 0.35) !important;
             margin-bottom: 16px !important;
+            width: 100% !important;
         }}
 
         .scale-text-agree {{
-            font-weight: 600;
-            color: #2C2A29;
-            font-size: 0.95rem;
-            text-align: right;
-            padding-top: 6px;
-            user-select: none;
+            font-weight: 600; color: #2C2A29; font-size: 0.95rem;
+            text-align: right; padding-top: 6px; user-select: none;
         }}
 
         .scale-text-disagree {{
-            font-weight: 600;
-            color: #2C2A29;
-            font-size: 0.95rem;
-            text-align: left;
-            padding-top: 6px;
-            user-select: none;
+            font-weight: 600; color: #2C2A29; font-size: 0.95rem;
+            text-align: left; padding-top: 6px; user-select: none;
         }}
 
-        /* Force Streamlit radio group inside columns to render horizontally and centered */
+        /* Radio Group Alignment */
         div[class*="st-key-scale_row_"] div[role="radiogroup"] {{
             display: flex !important;
             flex-direction: row !important;
@@ -98,38 +92,34 @@ def apply_custom_styling():
             gap: 14px !important;
         }}
         div[class*="st-key-scale_row_"] div[role="radiogroup"] > label {{
-            cursor: pointer;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
+            cursor: pointer; display: flex !important;
+            align-items: center !important; justify-content: center !important;
             transition: transform 0.15s ease;
-            background-color: transparent !important;
-            border: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
+            background-color: transparent !important; border: none !important;
+            padding: 0 !important; margin: 0 !important;
         }}
         div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:hover {{
             transform: scale(1.15);
         }}
 
-        /* Varying bubble sizes for the 7-point scale */
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(1) input[type="radio"],
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(7) input[type="radio"] {{
-            width: 24px; height: 24px;
+        /* Varying bubble sizes (Targeting the visible circle div, not hidden input) */
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(1) div[role="radio"] > div:first-child,
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(7) div[role="radio"] > div:first-child {{
+            transform: scale(1.4) !important;
         }}
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(2) input[type="radio"],
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(6) input[type="radio"] {{
-            width: 19px; height: 19px;
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(2) div[role="radio"] > div:first-child,
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(6) div[role="radio"] > div:first-child {{
+            transform: scale(1.15) !important;
         }}
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(3) input[type="radio"],
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(5) input[type="radio"] {{
-            width: 15px; height: 15px;
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(3) div[role="radio"] > div:first-child,
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(5) div[role="radio"] > div:first-child {{
+            transform: scale(0.9) !important;
         }}
-        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(4) input[type="radio"] {{
-            width: 11px; height: 11px;
+        div[class*="st-key-scale_row_"] div[role="radiogroup"] > label:nth-child(4) div[role="radio"] > div:first-child {{
+            transform: scale(0.65) !important;
         }}
 
-        /* --- CUSTOM SUBMIT BUTTON STYLING --- */
+        /* Submit Button Styling */
         div[data-testid="stFormSubmitButton"] button {{
             background-color: #EBE7DE !important;
             color: #2C2A29 !important;
@@ -140,52 +130,42 @@ def apply_custom_styling():
             border-radius: 8px !important;
             transition: background-color 0.2s ease !important;
         }}
-        
         div[data-testid="stFormSubmitButton"] button:hover {{
             background-color: #DCD6CC !important;
             border-color: rgba(180, 175, 165, 0.9) !important;
         }}
-
         div[data-testid="stFormSubmitButton"] button p {{
             font-size: 0.85rem !important;
             font-weight: 600 !important;
         }}
 
-        /* --- MOBILE RESPONSIVE FIX (Centers everything and prevents wrapping) --- */
+        /* --- MOBILE FIXES --- */
         @media (max-width: 640px) {{
-            /* Force the columns to stay side-by-side */
             div[class*="st-key-scale_row_"] div[data-testid="stHorizontalBlock"] {{
                 display: flex !important;
                 flex-direction: row !important;
                 flex-wrap: nowrap !important;
                 align-items: center !important;
-                justify-content: center !important; /* Centers the whole row */
+                justify-content: center !important;
                 gap: 0px !important;
                 width: 100% !important;
             }}
-            
-            /* Remove default padding/margins from columns so they don't push right */
             div[class*="st-key-scale_row_"] div[data-testid="column"] {{
                 padding: 0 !important;
                 margin: 0 !important;
             }}
-
-            /* Make text smaller and prevent wrapping */
             .scale-text-agree, .scale-text-disagree {{
                 font-size: 0.75rem !important;
                 padding-top: 8px !important;
                 white-space: nowrap !important;
             }}
-
-            /* Reduce the gap between bubbles */
             div[class*="st-key-scale_row_"] div[role="radiogroup"] {{
                 gap: 2px !important; 
                 justify-content: space-evenly !important;
             }}
-            
-            /* Scale down the bubbles slightly to ensure they fit on narrow screens */
-            div[class*="st-key-scale_row_"] div[role="radiogroup"] > label input[type="radio"] {{
-                transform: scale(0.85);
+            /* Slightly smaller bubbles on mobile */
+            div[class*="st-key-scale_row_"] div[role="radio"] > div:first-child {{
+                transform: scale(0.85) !important;
             }}
         }}
 
@@ -195,13 +175,8 @@ def apply_custom_styling():
             100% {{ transform: translateY(105vh) rotate(360deg); opacity: 0; }}
         }}
         .heart-particle {{
-            position: fixed;
-            top: -5vh;
-            font-size: 26px;
-            user-select: none;
-            pointer-events: none;
-            z-index: 9999;
-            animation: fall linear forwards;
+            position: fixed; top: -5vh; font-size: 26px; user-select: none;
+            pointer-events: none; z-index: 9999; animation: fall linear forwards;
         }}
         </style>
         """,
@@ -210,7 +185,6 @@ def apply_custom_styling():
 
 
 def trigger_hearts():
-    """Renders floating/falling hearts across the screen."""
     hearts_html = ""
     heart_icons = ["❤️", "🖤", "♥️", "💖"]
     np.random.seed(None)
@@ -232,106 +206,15 @@ apply_custom_styling()
 
 # --- 1. CONFIGURATION & FONT MAPPINGS ---
 FONT_MAPPINGS = {
-    0: {
-        "name": "Small Seal Script (小篆)",
-        "desc": (
-            "Rooted in the Qin Dynasty unification of Chinese writing, Small Seal Script is celebrated for its "
-            "elongated proportions, symmetrical balance, and deliberate, unhurried brushwork. "
-            "You are a thoughtful traditionalist who values heritage, precision, and enduring principles. "
-            "Rather than chasing fleeting trends, you find deep satisfaction in careful craftsmanship, ritual, "
-            "and building things meant to stand the test of time."
-        ),
-        "traits": "High Structure, High History",
-        "image": "asset/font_0_seal.png",
-    },
-    1: {
-        "name": "Clerical Script (隸書)",
-        "desc": (
-            "Born during the Han Dynasty to bring clarity and efficiency to official records, Clerical Script "
-            "features broad, grounded horizontal strokes and a calm, rhythmic cadence. "
-            "You possess a pragmatic, steady, and grounded temperament. People rely on you for your fairness, "
-            "clarity of thought, and ability to bring order to complex situations without unnecessary drama."
-        ),
-        "traits": "High Structure, Moderate Tempo",
-        "image": "asset/font_1_clerical.png",
-    },
-    2: {
-        "name": "Yan Style Standard Script (顏體楷書)",
-        "desc": (
-            "Created by Tang Dynasty master Yan Zhenqing, this iconic script is muscular, upright, and monumental, "
-            "with thick vertical pillars and firm, unwavering structure. "
-            "You are a principled leader with strong moral conviction and quiet authority. You hold yourself "
-            "and others to high standards, approaching responsibilities with integrity, resilience, and rock-solid dependability."
-        ),
-        "traits": "High Structure, Low Impulsivity",
-        "image": "asset/font_2_yan.png",
-    },
-    3: {
-        "name": "Liu Style Standard Script (柳體楷書)",
-        "desc": (
-            "Pioneered by Liu Gongquan, Liu Style is famed for its 'bony' strength—crisp, clean, well-proportioned "
-            "strokes that balance discipline with agility. "
-            "You are a composed, versatile, and well-rounded individual who thrives in both structured and collaborative settings. "
-            "You value clarity, fairness, and poise, maintaining calm focus even when navigating competing priorities."
-        ),
-        "traits": "Balanced Structure & Flow",
-        "image": "asset/font_3_liu.png",
-    },
-    4: {
-        "name": "Smooth Running Script (淡雅行書)",
-        "desc": (
-            "Bridging the legibility of Standard Script with the grace of Cursive, Smooth Running Script flows naturally "
-            "from stroke to stroke like water gliding over smooth stones. "
-            "You are an adaptable diplomat who values harmony, grace, and practical ease. You read rooms effortlessly, "
-            "adjust smoothly to shifting circumstances, and bring warmth and cohesion wherever you go."
-        ),
-        "traits": "Moderate Flow, High Adaptability",
-        "image": "asset/font_4_smooth_running.png",
-    },
-    5: {
-        "name": "Expressive Running Script (狂行書)",
-        "desc": (
-            "Dynamic, sweeping, and alive with momentum, Expressive Running Script captures thought in rapid motion, "
-            "linking characters with energetic, spontaneous turns of the brush. "
-            "You are a spirited creative who thrives on inspiration, novelty, and fast-paced exploration. "
-            "Rules feel like starting points rather than limits to you, and your enthusiasm naturally energizes those around you."
-        ),
-        "traits": "High Flow, High Expression",
-        "image": "asset/font_5_expressive_running.png",
-    },
-    6: {
-        "name": "Cursive Script (草書)",
-        "desc": (
-            "Unbound by strict stroke-by-stroke conventions, Cursive Script transforms characters into pure rhythm, "
-            "velocity, and emotional release—often written in a single breathless surge of ink. "
-            "You are a passionate, intuitive visionary driven by raw emotion and creative instinct. "
-            "You live intensely in the moment, value authenticity above conformity, and express your inner world boldly."
-        ),
-        "traits": "High Energy, High Extroversion",
-        "image": "asset/font_6_cursive.png",
-    },
-    7: {
-        "name": "Slender Gold Calligraphy (瘦金體書法)",
-        "desc": (
-            "Invented by Emperor Huizong of Song, Slender Gold is unmistakable for its razor-sharp, metallic, "
-            "elongated strokes that resemble fine gold wire and bamboo leaves. "
-            "You are an aesthete and modern minimalist with a keen eye for elegance, nuance, and clean design. "
-            "Independent and discerning, you prefer refined simplicity over clutter and appreciate subtle beauty others might miss."
-        ),
-        "traits": "Low Complexity, High Flow",
-        "image": "asset/font_7_slender.png",
-    },
-    8: {
-        "name": "Heavy Splash Ink Style (重墨書法)",
-        "desc": (
-            "Characterized by saturated, heavyweight brushloads, bold contrasts, and unapologetic presence on the paper, "
-            "Heavy Splash Ink turns every character into a dramatic visual statement. "
-            "You are a fearless maverick with a commanding, unforgettable presence. Unafraid to stand apart from the crowd, "
-            "you tackle challenges head-on with raw confidence, originality, and decisive impact."
-        ),
-        "traits": "High Boldness, Unconventional",
-        "image": "asset/font_8_splash_ink.png",
-    },
+    0: {"name": "Small Seal Script (小篆)", "desc": "Rooted in the Qin Dynasty unification of Chinese writing, Small Seal Script is celebrated for its elongated proportions, symmetrical balance, and deliberate, unhurried brushwork. You are a thoughtful traditionalist who values heritage, precision, and enduring principles.", "traits": "High Structure, High History", "image": "asset/font_0_seal.png"},
+    1: {"name": "Clerical Script (隸書)", "desc": "Born during the Han Dynasty to bring clarity and efficiency to official records, Clerical Script features broad, grounded horizontal strokes and a calm, rhythmic cadence. You possess a pragmatic, steady, and grounded temperament.", "traits": "High Structure, Moderate Tempo", "image": "asset/font_1_clerical.png"},
+    2: {"name": "Yan Style Standard Script (顏體楷書)", "desc": "Created by Tang Dynasty master Yan Zhenqing, this iconic script is muscular, upright, and monumental. You are a principled leader with strong moral conviction and quiet authority.", "traits": "High Structure, Low Impulsivity", "image": "asset/font_2_yan.png"},
+    3: {"name": "Liu Style Standard Script (柳體楷書)", "desc": "Pioneered by Liu Gongquan, Liu Style is famed for its 'bony' strength. You are a composed, versatile, and well-rounded individual who thrives in both structured and collaborative settings.", "traits": "Balanced Structure & Flow", "image": "asset/font_3_liu.png"},
+    4: {"name": "Smooth Running Script (淡雅行書)", "desc": "Bridging the legibility of Standard Script with the grace of Cursive, Smooth Running Script flows naturally. You are an adaptable diplomat who values harmony, grace, and practical ease.", "traits": "Moderate Flow, High Adaptability", "image": "asset/font_4_smooth_running.png"},
+    5: {"name": "Expressive Running Script (狂行書)", "desc": "Dynamic, sweeping, and alive with momentum, Expressive Running Script captures thought in rapid motion. You are a spirited creative who thrives on inspiration, novelty, and fast-paced exploration.", "traits": "High Flow, High Expression", "image": "asset/font_5_expressive_running.png"},
+    6: {"name": "Cursive Script (草書)", "desc": "Unbound by strict stroke-by-stroke conventions, Cursive Script transforms characters into pure rhythm, velocity, and emotional release. You are a passionate, intuitive visionary driven by raw emotion.", "traits": "High Energy, High Extroversion", "image": "asset/font_6_cursive.png"},
+    7: {"name": "Slender Gold Calligraphy (瘦金體書法)", "desc": "Invented by Emperor Huizong of Song, Slender Gold is unmistakable for its razor-sharp, metallic, elongated strokes. You are an aesthete and modern minimalist with a keen eye for elegance.", "traits": "Low Complexity, High Flow", "image": "asset/font_7_slender.png"},
+    8: {"name": "Heavy Splash Ink Style (重墨書法)", "desc": "Characterized by saturated, heavyweight brushloads and bold contrasts. You are a fearless maverick with a commanding, unforgettable presence.", "traits": "High Boldness, Unconventional", "image": "asset/font_8_splash_ink.png"},
 }
 
 
@@ -339,45 +222,24 @@ FONT_MAPPINGS = {
 @st.cache_resource
 def train_kmeans_model():
     np.random.seed(42)
-    centers = np.array(
-        [
-            [4.5, 1.5, 2.0, 4.8, 2.0],  
-            [4.0, 2.5, 2.5, 3.5, 2.5],  
-            [4.5, 2.0, 3.0, 4.0, 2.0],  
-            [3.0, 3.0, 3.0, 3.0, 3.0],  
-            [2.5, 3.5, 3.5, 2.5, 4.0],  
-            [2.0, 4.0, 4.0, 2.0, 4.5],  
-            [1.5, 4.8, 4.8, 1.5, 4.5],  
-            [2.0, 3.0, 2.0, 1.2, 3.5],  
-            [3.5, 4.5, 4.5, 3.0, 3.5],  
-        ]
-    )
-
+    centers = np.array([
+        [4.5, 1.5, 2.0, 4.8, 2.0], [4.0, 2.5, 2.5, 3.5, 2.5], [4.5, 2.0, 3.0, 4.0, 2.0],
+        [3.0, 3.0, 3.0, 3.0, 3.0], [2.5, 3.5, 3.5, 2.5, 4.0], [2.0, 4.0, 4.0, 2.0, 4.5],
+        [1.5, 4.8, 4.8, 1.5, 4.5], [2.0, 3.0, 2.0, 1.2, 3.5], [3.5, 4.5, 4.5, 3.0, 3.5],
+    ])
     data = []
     for center in centers:
-        cluster_points = np.random.normal(loc=center, scale=0.4, size=(30, 5))
-        data.append(cluster_points)
-
+        data.append(np.random.normal(loc=center, scale=0.4, size=(30, 5)))
     X = np.vstack(data)
     X = np.clip(X, 1.0, 5.0)
-
     kmeans = KMeans(n_clusters=9, random_state=42, n_init=10)
     kmeans.fit(X)
     return kmeans
 
-
 model = train_kmeans_model()
 
 # --- 3. 16PERSONALITIES SCALE MAPPING ---
-LIKERT_MAPPING = {
-    1: 5.0,
-    2: 4.33,
-    3: 3.67,
-    4: 3.0,
-    5: 2.33,
-    6: 1.67,
-    7: 1.0,
-}
+LIKERT_MAPPING = {1: 5.0, 2: 4.33, 3: 3.67, 4: 3.0, 5: 2.33, 6: 1.67, 7: 1.0}
 
 
 def mbti_bubbles(question_text, key):
@@ -388,11 +250,10 @@ def mbti_bubbles(question_text, key):
         with col_l:
             st.markdown('<div class="scale-text-agree">Agree</div>', unsafe_allow_html=True)
         with col_m:
-            # index=3 ensures it starts on the 4th option (Neutral)
             choice = st.radio(
                 label=question_text,
                 options=[1, 2, 3, 4, 5, 6, 7],
-                index=3,  
+                index=3,  # Starts at 4 (Neutral)
                 horizontal=True,
                 label_visibility="collapsed",
                 format_func=lambda x: "",
@@ -415,20 +276,20 @@ st.markdown("---")
 with st.form("calligraphy_form"):
     st.subheader("Your Personality Assessment")
 
-    q1 = mbti_bubbles("1. I prefer clear rules, neat organization, and structured plans over creative chaos.", "q1")
-    q2 = mbti_bubbles("2. I feel most comfortable when my daily schedule and workspace are well-ordered.", "q2")
+    q1 = mbti_bubbles("1. I prefer clear rules, neat organization, and structured plans over creative chaos.", "q1_v2")
+    q2 = mbti_bubbles("2. I feel most comfortable when my daily schedule and workspace are well-ordered.", "q2_v2")
 
-    q3 = mbti_bubbles("3. I move, think, and make decisions quickly, often acting on instinct.", "q3")
-    q4 = mbti_bubbles("4. I thrive in fast-paced environments rather than taking a slow, methodical approach.", "q4")
+    q3 = mbti_bubbles("3. I move, think, and make decisions quickly, often acting on instinct.", "q3_v2")
+    q4 = mbti_bubbles("4. I thrive in fast-paced environments rather than taking a slow, methodical approach.", "q4_v2")
 
-    q5 = mbti_bubbles("5. I express my emotions outwardly and passionately rather than keeping them bottled up.", "q5")
-    q6 = mbti_bubbles("6. People around me can easily tell how I am feeling from my energy and tone.", "q6")
+    q5 = mbti_bubbles("5. I express my emotions outwardly and passionately rather than keeping them bottled up.", "q5_v2")
+    q6 = mbti_bubbles("6. People around me can easily tell how I am feeling from my energy and tone.", "q6_v2")
 
-    q7 = mbti_bubbles("7. I am deeply fascinated by history, rich tradition, and intricate details.", "q7")
-    q8 = mbti_bubbles("8. I appreciate layered, ornate craftsmanship more than sleek, bare minimalism.", "q8")
+    q7 = mbti_bubbles("7. I am deeply fascinated by history, rich tradition, and intricate details.", "q7_v2")
+    q8 = mbti_bubbles("8. I appreciate layered, ornate craftsmanship more than sleek, bare minimalism.", "q8_v2")
 
-    q9 = mbti_bubbles("9. I adapt smoothly to sudden changes rather than sticking rigidly to my original plan.", "q9")
-    q10 = mbti_bubbles("10. I enjoy improvising in the moment when unexpected opportunities arise.", "q10")
+    q9 = mbti_bubbles("9. I adapt smoothly to sudden changes rather than sticking rigidly to my original plan.", "q9_v2")
+    q10 = mbti_bubbles("10. I enjoy improvising in the moment when unexpected opportunities arise.", "q10_v2")
 
     submitted = st.form_submit_button("Find My Calligraphy Font!")
 
@@ -440,9 +301,7 @@ if submitted:
     dim_complexity = (q7 + q8) / 2.0
     dim_adaptability = (q9 + q10) / 2.0
 
-    user_vector = np.array(
-        [[dim_structure, dim_tempo, dim_expression, dim_complexity, dim_adaptability]]
-    )
+    user_vector = np.array([[dim_structure, dim_tempo, dim_expression, dim_complexity, dim_adaptability]])
 
     cluster_idx = int(model.predict(user_vector)[0])
     display_cluster_num = cluster_idx + 1
@@ -464,21 +323,15 @@ if submitted:
 
     with col2:
         if os.path.exists(font_info["image"]):
-            st.image(
-                font_info["image"],
-                caption=f"Preview: {font_info['name']}",
-                use_container_width=True,
-            )
+            st.image(font_info["image"], caption=f"Preview: {font_info['name']}", use_container_width=True)
         else:
             st.info(f"Preview image placeholder: `{font_info['image']}`")
 
     with st.expander("View K-Means Distance Breakdown"):
         distances = model.transform(user_vector)[0]
-        dist_df = pd.DataFrame(
-            {
-                "Cluster": [k + 1 for k in FONT_MAPPINGS.keys()],
-                "Font Style": [f["name"] for f in FONT_MAPPINGS.values()],
-                "Distance Score (Lower is Closer)": distances,
-            }
-        ).sort_values("Distance Score (Lower is Closer)")
+        dist_df = pd.DataFrame({
+            "Cluster": [k + 1 for k in FONT_MAPPINGS.keys()],
+            "Font Style": [f["name"] for f in FONT_MAPPINGS.values()],
+            "Distance Score (Lower is Closer)": distances,
+        }).sort_values("Distance Score (Lower is Closer)")
         st.dataframe(dist_df, hide_index=True)
