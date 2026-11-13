@@ -250,7 +250,7 @@ LIKERT_MAPPING = {1: 5.0, 2: 4.33, 3: 3.67, 4: 3.0, 5: 2.33, 6: 1.67, 7: 1.0}
 def mbti_bubbles(question_text, key_base):
     st.markdown(f"**{question_text}**")
     
-    # Add the session UUID to guarantee a fresh start on page reload
+    # Add the session UUID to guarantee a fresh start on page reload/reset
     unique_key = f"{key_base}_{session_uuid}"
     
     # Force neutral (option 4) on first load of this key
@@ -265,6 +265,7 @@ def mbti_bubbles(question_text, key_base):
             choice = st.radio(
                 label=question_text,
                 options=[1, 2, 3, 4, 5, 6, 7],
+                index=3,  # <--- Forces default selection to index 3 (option '4', middle neutral)
                 horizontal=True,
                 label_visibility="collapsed",
                 format_func=lambda x: "",
@@ -282,6 +283,14 @@ st.markdown(
     "Select the bubble that best reflects how much you agree or disagree with each of the **10 statements** below. "
     "Our K-Means clustering model will analyze your responses across 5 psychological dimensions to match you with **1 of 9 Chinese Calligraphy Styles**."
 )
+
+# Reset Button placement right above the form
+col_title_space, col_reset_btn = st.columns([4, 1])
+with col_reset_btn:
+    if st.button("🔄 Reset Form", use_container_width=True):
+        st.session_state["session_id"] = str(uuid.uuid4())
+        st.rerun()
+
 st.markdown("---")
 
 with st.form("calligraphy_form"):
