@@ -344,4 +344,96 @@ with st.form("calligraphy_form"):
 
     # Dimension 2: Tempo & Energy (Q3 & Q4)
     q3 = mbti_bubbles(
-        "3. I move, think, and make decisions quickly, often
+        "3. I move, think, and make decisions quickly, often acting on instinct.",
+        "q3",
+    )
+    q4 = mbti_bubbles(
+        "4. I thrive in fast-paced environments rather than taking a slow, methodical approach.",
+        "q4",
+    )
+
+    # Dimension 3: Expression & Emotion (Q5 & Q6)
+    q5 = mbti_bubbles(
+        "5. I express my emotions outwardly and passionately rather than keeping them bottled up.",
+        "q5",
+    )
+    q6 = mbti_bubbles(
+        "6. People around me can easily tell how I am feeling from my energy and tone.",
+        "q6",
+    )
+
+    # Dimension 4: Complexity vs. Minimalism (Q7 & Q8)
+    q7 = mbti_bubbles(
+        "7. I am deeply fascinated by history, rich tradition, and intricate details.",
+        "q7",
+    )
+    q8 = mbti_bubbles(
+        "8. I appreciate layered, ornate craftsmanship more than sleek, bare minimalism.",
+        "q8",
+    )
+
+    # Dimension 5: Adaptability & Flow (Q9 & Q10)
+    q9 = mbti_bubbles(
+        "9. I adapt smoothly to sudden changes rather than sticking rigidly to my original plan.",
+        "q9",
+    )
+    q10 = mbti_bubbles(
+        "10. I enjoy improvising in the moment when unexpected opportunities arise.",
+        "q10",
+    )
+
+    submitted = st.form_submit_button("Find My Calligraphy Font!")
+
+# --- 5. PREDICTION & RESULT DISPLAY ---
+if submitted:
+    # Average each pair of questions into the 5 core dimensions
+    dim_structure = (q1 + q2) / 2.0
+    dim_tempo = (q3 + q4) / 2.0
+    dim_expression = (q5 + q6) / 2.0
+    dim_complexity = (q7 + q8) / 2.0
+    dim_adaptability = (q9 + q10) / 2.0
+
+    user_vector = np.array(
+        [[dim_structure, dim_tempo, dim_expression, dim_complexity, dim_adaptability]]
+    )
+
+    # Predict internal cluster (0..8) and convert to 1..9 for display
+    cluster_idx = int(model.predict(user_vector)[0])
+    display_cluster_num = cluster_idx + 1
+    font_info = FONT_MAPPINGS[cluster_idx]
+
+    # Trigger falling hearts
+    trigger_hearts()
+
+    st.markdown("---")
+    st.subheader("✨ Your Calligraphy Match Result")
+
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.metric(label="Assigned Cluster ID", value=f"Cluster #{display_cluster_num}")
+    with col2:
+        st.success(f"**Recommended Style:** {font_info['name']}")
+
+    st.markdown(f"### **Core Profile Vibe:** _{font_info['traits']}_")
+    st.write(font_info["desc"])
+
+    with col2:
+        if os.path.exists(font_info["image"]):
+            st.image(
+                font_info["image"],
+                caption=f"Preview: {font_info['name']}",
+                use_container_width=True,
+            )
+        else:
+            st.info(f"Preview image placeholder: `{font_info['image']}`")
+
+    with st.expander("View K-Means Distance Breakdown"):
+        distances = model.transform(user_vector)[0]
+        dist_df = pd.DataFrame(
+            {
+                "Cluster": [k + 1 for k in FONT_MAPPINGS.keys()],
+                "Font Style": [f["name"] for f in FONT_MAPPINGS.values()],
+                "Distance Score (Lower is Closer)": distances,
+            }
+        ).sort_values("Distance Score (Lower is Closer)")
+        st.dataframe(dist_df, hide_index=True)
