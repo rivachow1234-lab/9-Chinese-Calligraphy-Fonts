@@ -14,7 +14,6 @@ st.set_page_config(
 )
 
 # --- SESSION ID TO PREVENT STUCK STATES ---
-# Generates a unique ID per session/reset to force Streamlit to wipe old memory and start fresh
 if "session_id" not in st.session_state:
     st.session_state["session_id"] = str(uuid.uuid4())
 session_uuid = st.session_state["session_id"]
@@ -249,8 +248,11 @@ LIKERT_MAPPING = {1: 5.0, 2: 4.33, 3: 3.67, 4: 3.0, 5: 2.33, 6: 1.67, 7: 1.0}
 def mbti_bubbles(question_text, key_base):
     st.markdown(f"**{question_text}**")
     
-    # Bind the key to session_uuid so it creates a fresh widget state on load and reset
     unique_key = f"{key_base}_{session_uuid}"
+    
+    # Explicitly set session state to 4 (middle neutral) if not already initialized
+    if unique_key not in st.session_state:
+        st.session_state[unique_key] = 4
     
     with st.container(border=True, key=f"scale_row_{unique_key}"):
         col_l, col_m, col_r = st.columns([0.8, 5, 0.8])
@@ -260,7 +262,6 @@ def mbti_bubbles(question_text, key_base):
             choice = st.radio(
                 label=question_text,
                 options=[1, 2, 3, 4, 5, 6, 7],
-                index=3,  # <--- Forces default selection to index 3 (option '4', the exact middle neutral bubble)
                 horizontal=True,
                 label_visibility="collapsed",
                 format_func=lambda x: "",
