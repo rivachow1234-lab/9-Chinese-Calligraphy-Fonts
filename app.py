@@ -1,5 +1,6 @@
 import base64
 import os
+import uuid
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
@@ -12,11 +13,11 @@ st.set_page_config(
     layout="centered",
 )
 
-# --- INITIALIZE SESSION STATE FOR DEFAULT NEUTRAL SELECTION ---
-for i in range(1, 11):
-    key = f"q{i}"
-    if key not in st.session_state:
-        st.session_state[key] = 4  # 4 is the middle neutral point
+# --- SESSION ID TO PREVENT STUCK STATES ---
+# Generates a unique ID per session/reset to force Streamlit to wipe old memory and start fresh
+if "session_id" not in st.session_state:
+    st.session_state["session_id"] = str(uuid.uuid4())
+session_uuid = st.session_state["session_id"]
 
 
 # --- HELPER: BACKGROUND, 16PERSONALITIES BUBBLES & CUSTOM ANIMATIONS ---
@@ -245,10 +246,13 @@ model = train_kmeans_model()
 LIKERT_MAPPING = {1: 5.0, 2: 4.33, 3: 3.67, 4: 3.0, 5: 2.33, 6: 1.67, 7: 1.0}
 
 
-def mbti_bubbles(question_text, key_name):
+def mbti_bubbles(question_text, key_base):
     st.markdown(f"**{question_text}**")
     
-    with st.container(border=True, key=f"scale_row_{key_name}"):
+    # Bind the key to session_uuid so it creates a fresh widget state on load and reset
+    unique_key = f"{key_base}_{session_uuid}"
+    
+    with st.container(border=True, key=f"scale_row_{unique_key}"):
         col_l, col_m, col_r = st.columns([0.8, 5, 0.8])
         with col_l:
             st.markdown('<div class="scale-text-agree">Agree</div>', unsafe_allow_html=True)
@@ -256,10 +260,11 @@ def mbti_bubbles(question_text, key_name):
             choice = st.radio(
                 label=question_text,
                 options=[1, 2, 3, 4, 5, 6, 7],
+                index=3,  # <--- Forces default selection to index 3 (option '4', the exact middle neutral bubble)
                 horizontal=True,
                 label_visibility="collapsed",
                 format_func=lambda x: "",
-                key=key_name,
+                key=unique_key,
             )
         with col_r:
             st.markdown('<div class="scale-text-disagree">Disagree</div>', unsafe_allow_html=True)
@@ -278,8 +283,7 @@ st.markdown(
 col_title_space, col_reset_btn = st.columns([4, 1])
 with col_reset_btn:
     if st.button("🔄 Reset Form", use_container_width=True):
-        for i in range(1, 11):
-            st.session_state[f"q{i}"] = 4
+        st.session_state["session_id"] = str(uuid.uuid4())
         st.rerun()
 
 st.markdown("---")
