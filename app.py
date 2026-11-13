@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 
-# --- HELPER: BACKGROUND, TIMES NEW ROMAN, GREEN-PURPLE BUBBLES & ANIMATIONS ---
+# --- HELPER: BACKGROUND, TIMES NEW ROMAN, MBTI SIZED BUBBLES & ANIMATIONS ---
 def apply_custom_styling():
     local_bg_path = "asset/ink_mountains.jpg"
     if os.path.exists(local_bg_path):
@@ -50,41 +50,68 @@ def apply_custom_styling():
             border: 1px solid rgba(180, 175, 165, 0.4);
         }}
 
-        /* 7-Point Horizontal Radio Bubbles with Green-to-Purple Gradient */
-        div[role="radiogroup"] {{
+        /* 16Personalities Style Layout Container */
+        .mbti-scale-container {{
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
             background-color: rgba(242, 239, 233, 0.75);
-            padding: 12px 14px;
+            padding: 14px 20px;
             border-radius: 12px;
             border: 1px solid rgba(180, 175, 165, 0.35);
-            margin-bottom: 16px;
-            gap: 4px;
+            margin-bottom: 18px;
         }}
-        div[role="radiogroup"] label {{
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            cursor: pointer;
-            font-size: 0.78rem;
-            padding: 4px 4px;
-            border-radius: 8px;
-            transition: transform 0.15s ease;
+        .mbti-label-agree {{
+            font-weight: bold;
+            color: #1b4332;
+            font-size: 0.95rem;
+            min-width: 65px;
+            text-align: left;
         }}
-        div[role="radiogroup"] label:hover {{
-            transform: scale(1.05);
+        .mbti-label-disagree {{
+            font-weight: bold;
+            color: #3c096c;
+            font-size: 0.95rem;
+            min-width: 75px;
+            text-align: right;
         }}
 
-        /* Color Gradient mapping for the 7 bubbles (Green -> Teal/Neutral -> Purple) */
-        div[role="radiogroup"] label:nth-child(1) p {{ color: #1b4332; font-weight: bold; }}
-        div[role="radiogroup"] label:nth-child(2) p {{ color: #2d6a4f; }}
-        div[role="radiogroup"] label:nth-child(3) p {{ color: #52b788; }}
-        div[role="radiogroup"] label:nth-child(4) p {{ color: #6c757d; }}
-        div[role="radiogroup"] label:nth-child(5) p {{ color: #7b2cbf; }}
-        div[role="radiogroup"] label:nth-child(6) p {{ color: #560bad; }}
-        div[role="radiogroup"] label:nth-child(7) p {{ color: #3c096c; font-weight: bold; }}
+        /* Adjust Streamlit Radio Group inside container to align horizontally */
+        div[role="radiogroup"] {{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin: 0px !important;
+            background: transparent !important;
+            border: none !important;
+            padding: 0px !important;
+        }}
+        div[role="radiogroup"] label {{
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            padding: 2px !important;
+        }}
+        div[role="radiogroup"] label:hover {{
+            transform: scale(1.12);
+        }}
+
+        /* Sizing the radio circles and mapping Green -> Neutral -> Purple gradient */
+        /* Left side (Agree - Green) */
+        div[role="radiogroup"] label:nth-child(1) input[type="radio"] {{ width: 28px; height: 28px; accent-color: #1b4332; }}
+        div[role="radiogroup"] label:nth-child(2) input[type="radio"] {{ width: 22px; height: 22px; accent-color: #2d6a4f; }}
+        div[role="radiogroup"] label:nth-child(3) input[type="radio"] {{ width: 17px; height: 17px; accent-color: #52b788; }}
+        /* Center (Neutral) */
+        div[role="radiogroup"] label:nth-child(4) input[type="radio"] {{ width: 12px; height: 12px; accent-color: #6c757d; }}
+        /* Right side (Disagree - Purple) */
+        div[role="radiogroup"] label:nth-child(5) input[type="radio"] {{ width: 17px; height: 17px; accent-color: #7b2cbf; }}
+        div[role="radiogroup"] label:nth-child(6) input[type="radio"] {{ width: 22px; height: 22px; accent-color: #560bad; }}
+        div[role="radiogroup"] label:nth-child(7) input[type="radio"] {{ width: 28px; height: 28px; accent-color: #3c096c; }}
+
+        /* Hide the text labels under the radio buttons since Agree/Disagree flank the ends */
+        div[role="radiogroup"] label p {{
+            display: none !important;
+        }}
 
         /* Falling Hearts Animation */
         @keyframes fall {{
@@ -238,13 +265,9 @@ FONT_MAPPINGS = {
 }
 
 
-# --- 2. INITIALIZE MODEL WITH SYNTHETIC DATA (7-Point Scale Centers) ---
+# --- 2. INITIALIZE MODEL WITH SYNTHETIC DATA ---
 @st.cache_resource
 def train_kmeans_model():
-    """Generates synthetic training data representing 9 archetypes
-
-    on a 1-7 scale and fits a KMeans model with 9 clusters.
-    """
     np.random.seed(42)
     centers = np.array(
         [
@@ -275,29 +298,53 @@ def train_kmeans_model():
 
 model = train_kmeans_model()
 
-# --- 3. 7-POINT BUBBLE LIKERT SCALE HELPER ---
-LIKERT_OPTIONS_7 = {
-    "Strongly Disagree": 1.0,
-    "Disagree": 2.0,
-    "Somewhat Disagree": 3.0,
-    "Neutral": 4.0,
-    "Somewhat Agree": 5.0,
-    "Agree": 6.0,
+# --- 3. MBTI 7-POINT SCALE HELPER (Agree on Left, Disagree on Right) ---
+LIKERT_OPTIONS_7 = [
+    "Strongly Agree",
+    "Agree",
+    "Somewhat Agree",
+    "Neutral",
+    "Somewhat Disagree",
+    "Disagree",
+    "Strongly Disagree",
+]
+
+# Score mapping: Strongly Agree = 7.0 down to Strongly Disagree = 1.0
+SCORE_MAP = {
     "Strongly Agree": 7.0,
+    "Agree": 6.0,
+    "Somewhat Agree": 5.0,
+    "Neutral": 4.0,
+    "Somewhat Disagree": 3.0,
+    "Disagree": 2.0,
+    "Strongly Disagree": 1.0,
 }
 
 
-def mbti_bubbles_7(question_text, key):
+def mbti_bubble_question(question_text, key):
     st.markdown(f"**{question_text}**")
+    st.markdown('<div class="mbti-scale-container">', unsafe_allow_html=True)
+
+    # Left label: Agree
+    st.markdown('<span class="mbti-label-agree">Agree</span>', unsafe_allow_html=True)
+
+    # 7 Radio Bubbles
     choice = st.radio(
         label=question_text,
-        options=list(LIKERT_OPTIONS_7.keys()),
-        index=3,  # Default to Neutral (middle option)
+        options=LIKERT_OPTIONS_7,
+        index=3,  # Default to Neutral
         horizontal=True,
         label_visibility="collapsed",
         key=key,
     )
-    return LIKERT_OPTIONS_7[choice]
+
+    # Right label: Disagree
+    st.markdown(
+        '<span class="mbti-label-disagree">Disagree</span>', unsafe_allow_html=True
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    return SCORE_MAP[choice]
 
 
 # --- 4. STREAMLIT UI ---
@@ -312,51 +359,51 @@ with st.form("calligraphy_form"):
     st.subheader("Your Personality Assessment")
 
     # Dimension 1: Structure & Order (Q1 & Q2)
-    q1 = mbti_bubbles_7(
+    q1 = mbti_bubble_question(
         "1. I strictly adhere to detailed daily checklists and rigid schedules to manage my time.",
         "q1",
     )
-    q2 = mbti_bubbles_7(
+    q2 = mbti_bubble_question(
         "2. When planning a new project, I prefer establishing an unchanging roadmap rather than adapting on the fly.",
         "q2",
     )
 
     # Dimension 2: Tempo & Energy (Q3 & Q4)
-    q3 = mbti_bubbles_7(
+    q3 = mbti_bubble_question(
         "3. I make important decisions instantly based on my immediate intuition rather than lengthy deliberation.",
         "q3",
     )
-    q4 = mbti_bubbles_7(
+    q4 = mbti_bubble_question(
         "4. I feel deeply impatient and frustrated when daily tasks or conversations move too slowly.",
         "q4",
     )
 
     # Dimension 3: Expression & Emotion (Q5 & Q6)
-    q5 = mbti_bubbles_7(
+    q5 = mbti_bubble_question(
         "5. I openly and passionately wear my heart on my sleeve, letting everyone around me know my exact emotional state.",
         "q5",
     )
-    q6 = mbti_bubbles_7(
+    q6 = mbti_bubble_question(
         "6. When strong emotions hit me, I express them outward with intense vocal and physical energy rather than keeping them internal.",
         "q6",
     )
 
     # Dimension 4: Complexity vs. Minimalism (Q7 & Q8)
-    q7 = mbti_bubbles_7(
+    q7 = mbti_bubble_question(
         "7. I am profoundly captivated by ancient historical archives, traditional philosophies, and intricate cultural heritage.",
         "q7",
     )
-    q8 = mbti_bubbles_7(
+    q8 = mbti_bubble_question(
         "8. I prefer ornate, highly detailed craftsmanship over sleek, bare, modern minimalist aesthetics.",
         "q8",
     )
 
     # Dimension 5: Adaptability & Flow (Q9 & Q10)
-    q9 = mbti_bubbles_7(
+    q9 = mbti_bubble_question(
         "9. Sudden and radical changes in my environment excite and energize me instead of causing me stress.",
         "q9",
     )
-    q10 = mbti_bubbles_7(
+    q10 = mbti_bubble_question(
         "10. I effortlessly throw away my original plans and improvise the moment unexpected obstacles arise.",
         "q10",
     )
@@ -365,7 +412,6 @@ with st.form("calligraphy_form"):
 
 # --- 5. PREDICTION & RESULT DISPLAY ---
 if submitted:
-    # Average each pair of questions into the 5 core dimensions (1 to 7 scale)
     dim_structure = (q1 + q2) / 2.0
     dim_tempo = (q3 + q4) / 2.0
     dim_expression = (q5 + q6) / 2.0
@@ -376,12 +422,10 @@ if submitted:
         [[dim_structure, dim_tempo, dim_expression, dim_complexity, dim_adaptability]]
     )
 
-    # Predict internal cluster (0..8) and convert to 1..9 for display
     cluster_idx = int(model.predict(user_vector)[0])
     display_cluster_num = cluster_idx + 1
     font_info = FONT_MAPPINGS[cluster_idx]
 
-    # Trigger falling hearts
     trigger_hearts()
 
     st.markdown("---")
