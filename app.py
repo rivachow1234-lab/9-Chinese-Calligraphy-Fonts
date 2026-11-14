@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 
-# --- HELPER: BACKGROUND, MBTI BUBBLES & CUSTOM ANIMATIONS ---
+# --- HELPER: BACKGROUND, CUSTOM STYLING & ANIMATIONS ---
 def apply_custom_styling():
     local_bg_path = "asset/ink_mountains.jpg"
     if os.path.exists(local_bg_path):
@@ -26,6 +26,14 @@ def apply_custom_styling():
     st.markdown(
         f"""
         <style>
+        /* Global font: Times New Roman, dark text */
+        html, body, [class*="css"], .stApp, .stMarkdown, .stText, 
+        p, h1, h2, h3, h4, h5, h6, label, .stSlider label, 
+        .stMetric, .stSuccess, .stInfo, .stExpander {{
+            font-family: "Times New Roman", Times, serif !important;
+            color: #1a1a1a !important;
+        }}
+
         /* Ink Wash Mountains Background */
         .stApp {{
             background-image: linear-gradient(rgba(245, 243, 238, 0.78), rgba(245, 243, 238, 0.85)), {bg_css};
@@ -45,31 +53,31 @@ def apply_custom_styling():
             border: 1px solid rgba(180, 175, 165, 0.4);
         }}
 
-        /* MBTI-Style Horizontal Radio Bubbles */
-        div[role="radiogroup"] {{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: rgba(242, 239, 233, 0.7);
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 1px solid rgba(180, 175, 165, 0.35);
-            margin-bottom: 14px;
-            gap: 6px;
+        /* Light-colored submit button */
+        div.stButton > button[kind="primary"],
+        div.stButton > button,
+        button[data-testid="baseButton-primary"],
+        .stFormSubmitButton > button {{
+            background-color: #f5f0e6 !important;
+            color: #1a1a1a !important;
+            border: 1px solid #d4cbb8 !important;
+            border-radius: 10px !important;
+            font-family: "Times New Roman", Times, serif !important;
+            font-weight: 600 !important;
+            padding: 0.6rem 1.4rem !important;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
         }}
-        div[role="radiogroup"] label {{
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            cursor: pointer;
-            font-size: 0.82rem;
-            padding: 4px 6px;
-            border-radius: 8px;
-            transition: transform 0.15s ease;
+        div.stButton > button:hover,
+        .stFormSubmitButton > button:hover {{
+            background-color: #ebe4d6 !important;
+            border-color: #c4b9a4 !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            color: #1a1a1a !important;
         }}
-        div[role="radiogroup"] label:hover {{
-            transform: scale(1.06);
+
+        /* Slider track and thumb tweaks for a cleaner look */
+        div[data-testid="stSlider"] {{
+            padding-bottom: 0.8rem;
         }}
 
         /* Falling Hearts Animation */
@@ -263,33 +271,30 @@ def train_kmeans_model():
 
 model = train_kmeans_model()
 
-# --- 3. MBTI BUBBLE LIKERT SCALE HELPER ---
-LIKERT_OPTIONS = {
-    "Strongly Disagree": 1.0,
-    "Disagree": 2.0,
-    "Neutral": 3.0,
-    "Agree": 4.0,
-    "Strongly Agree": 5.0,
-}
-
-
-def mbti_bubbles(question_text, key):
+# --- 3. SLIDER LIKERT SCALE HELPER ---
+def likert_slider(question_text, key):
+    """Renders a 1–5 Likert slider with labeled endpoints."""
     st.markdown(f"**{question_text}**")
-    choice = st.radio(
+    value = st.slider(
         label=question_text,
-        options=list(LIKERT_OPTIONS.keys()),
-        index=2,  # Default to Neutral (middle bubble)
-        horizontal=True,
+        min_value=1.0,
+        max_value=5.0,
+        value=3.0,
+        step=1.0,
+        format="%d",
         label_visibility="collapsed",
         key=key,
+        help="1 = Strongly Disagree · 3 = Neutral · 5 = Strongly Agree",
     )
-    return LIKERT_OPTIONS[choice]
+    # Visual guide under the slider
+    st.caption("1 Strongly Disagree  ·  2 Disagree  ·  3 Neutral  ·  4 Agree  ·  5 Strongly Agree")
+    return float(value)
 
 
 # --- 4. STREAMLIT UI ---
 st.title("🖌️ Chinese Calligraphy Personality Matcher")
 st.markdown(
-    "Select the bubble that best reflects how much you agree or disagree with each of the **10 statements** below. "
+    "Move each slider to indicate how much you agree or disagree with the **10 statements** below. "
     "Our K-Means clustering model will analyze your responses across 5 psychological dimensions to match you with **1 of 9 Chinese Calligraphy Styles**."
 )
 st.markdown("---")
@@ -298,51 +303,51 @@ with st.form("calligraphy_form"):
     st.subheader("Your Personality Assessment")
 
     # Dimension 1: Structure & Order (Q1 & Q2)
-    q1 = mbti_bubbles(
+    q1 = likert_slider(
         "1. I prefer clear rules, neat organization, and structured plans over creative chaos.",
         "q1",
     )
-    q2 = mbti_bubbles(
+    q2 = likert_slider(
         "2. I feel most comfortable when my daily schedule and workspace are well-ordered.",
         "q2",
     )
 
     # Dimension 2: Tempo & Energy (Q3 & Q4)
-    q3 = mbti_bubbles(
+    q3 = likert_slider(
         "3. I move, think, and make decisions quickly, often acting on instinct.",
         "q3",
     )
-    q4 = mbti_bubbles(
+    q4 = likert_slider(
         "4. I thrive in fast-paced environments rather than taking a slow, methodical approach.",
         "q4",
     )
 
     # Dimension 3: Expression & Emotion (Q5 & Q6)
-    q5 = mbti_bubbles(
+    q5 = likert_slider(
         "5. I express my emotions outwardly and passionately rather than keeping them bottled up.",
         "q5",
     )
-    q6 = mbti_bubbles(
+    q6 = likert_slider(
         "6. People around me can easily tell how I am feeling from my energy and tone.",
         "q6",
     )
 
     # Dimension 4: Complexity vs. Minimalism (Q7 & Q8)
-    q7 = mbti_bubbles(
+    q7 = likert_slider(
         "7. I am deeply fascinated by history, rich tradition, and intricate details.",
         "q7",
     )
-    q8 = mbti_bubbles(
+    q8 = likert_slider(
         "8. I appreciate layered, ornate craftsmanship more than sleek, bare minimalism.",
         "q8",
     )
 
     # Dimension 5: Adaptability & Flow (Q9 & Q10)
-    q9 = mbti_bubbles(
+    q9 = likert_slider(
         "9. I adapt smoothly to sudden changes rather than sticking rigidly to my original plan.",
         "q9",
     )
-    q10 = mbti_bubbles(
+    q10 = likert_slider(
         "10. I enjoy improvising in the moment when unexpected opportunities arise.",
         "q10",
     )
