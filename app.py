@@ -25,7 +25,12 @@ def apply_custom_styling():
 
     st.markdown(
         f"""
-        <style>
+       <style>
+        /* Force light color scheme on mobile browsers */
+        :root {{
+            color-scheme: light !important;
+        }}
+
         /* Global font: Times New Roman, dark text */
         html, body, [class*="css"], .stApp, .stMarkdown, .stText, 
         p, h1, h2, h3, h4, h5, h6, label, .stSlider label, 
@@ -44,13 +49,52 @@ def apply_custom_styling():
 
         /* Frosted Rice-Paper Container for Readability */
         .block-container {{
-            background-color: rgba(255, 253, 249, 0.90);
+            background-color: rgba(255, 253, 249, 0.92) !important;
             padding: 2.5rem 2rem;
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
             margin-top: 2rem;
             margin-bottom: 2rem;
             border: 1px solid rgba(180, 175, 165, 0.4);
+        }}
+
+        /* --- FIX FOR MOBILE DARK MODE ON RESULT CARDS --- */
+        /* Assigned Cluster ID Metric Box */
+        div[data-testid="stMetric"] {{
+            background-color: #f7f3ea !important;
+            border: 1px solid #d4cbb8 !important;
+            border-radius: 12px !important;
+            padding: 0.9rem 1.1rem !important;
+        }}
+        div[data-testid="stMetricLabel"] p,
+        div[data-testid="stMetricValue"] div {{
+            color: #1a1a1a !important;
+        }}
+
+        /* Recommended Style Alert Box (st.success / st.info) */
+        div[data-testid="stAlert"] {{
+            background-color: #eef5ec !important;
+            border: 1px solid #bfd4ba !important;
+            border-radius: 12px !important;
+            color: #1a1a1a !important;
+        }}
+        div[data-testid="stAlert"] p,
+        div[data-testid="stAlert"] svg {{
+            color: #1a1a1a !important;
+            fill: #1a1a1a !important;
+        }}
+
+        /* K-Means Distance Breakdown Expander */
+        div[data-testid="stExpander"] details,
+        div[data-testid="stExpander"] summary,
+        div[data-testid="stExpanderDetails"] {{
+            background-color: #faf7f0 !important;
+            border-color: #d4cbb8 !important;
+            color: #1a1a1a !important;
+            border-radius: 10px !important;
+        }}
+        div[data-testid="stExpander"] summary svg {{
+            fill: #1a1a1a !important;
         }}
 
         /* Light-colored submit button */
@@ -75,7 +119,7 @@ def apply_custom_styling():
             color: #1a1a1a !important;
         }}
 
-        /* Slider track and thumb tweaks for a cleaner look */
+        /* Slider track and thumb tweaks */
         div[data-testid="stSlider"] {{
             padding-bottom: 0.8rem;
         }}
