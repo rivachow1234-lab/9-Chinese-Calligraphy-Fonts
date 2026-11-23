@@ -398,9 +398,71 @@ with st.form("calligraphy_form"):
 
     submitted = st.form_submit_button("Find My Calligraphy Font!")
 
-# --- 5. PREDICTION & RESULT DISPLAY ---
+from io import BytesIO
+from PIL import Image, ImageDraw, ImageFont
+
+# Optional per-cluster font paths & visual styling hints
+# Drop matching .ttf/.otf files into `asset/fonts/` if you want distinct local fonts per style.
+STYLE_RENDER_CONFIG = {
+    0: {"font_path": "asset/fonts/seal.ttf", "ink": (35, 32, 28), "accent": "#8b261d"},
+    1: {"font_path": "asset/fonts/clerical.ttf", "ink": (30, 28, 25), "accent": "#7a2e22"},
+    2: {"font_path": "asset/fonts/yan.ttf", "ink": (22, 22, 22), "accent": "#9e2a2b"},
+    3: {"font_path": "asset/fonts/liu.ttf", "ink": (25, 27, 30), "accent": "#2b4c59"},
+    4: {"font_path": "asset/fonts/running.ttf", "ink": (34, 34, 34), "accent": "#4a6b5d"},
+    5: {"font_path": "asset/fonts/expressive.ttf", "ink": (20, 20, 20), "accent": "#a43820"},
+    6: {"font_path": "asset/fonts/cursive.ttf", "ink": (18, 18, 18), "accent": "#8c1d18"},
+    7: {"font_path": "asset/fonts/slender_gold.ttf", "ink": (65, 55, 35), "accent": "#9c7a2c"},
+    8: {"font_path": "asset/fonts/splash_ink.ttf", "ink": (15, 15, 15), "accent": "#781d19"},
+}
+
+
+def render_name_calligraphy_image(name_text: str, cluster_idx: int, style_name: str) -> Image.Image:
+    """Renders a personalized rice-paper calligraphy card using a local TTF if available."""
+    width, height = 900, 340
+    paper_bg = (250, 246, 236)
+    cfg = STYLE_RENDER_CONFIG.get(cluster_idx, {"font_path": "", "ink": (25, 25, 25), "accent": "#8b261d"})
+
+    img = Image.new("RGB", (width, height), color=paper_bg)
+    draw = ImageDraw.Draw(img)
+
+    # Subtle double border like traditional stationery
+    draw.rectangle([18, 18, width - 18, height - 18], outline=(195, 184, 162), width=2)
+    draw.rectangle([26, 26, width - 26, height - 26], outline=(220, 212, 194), width=1)
+
+    # Load custom calligraphy font if present, else fall back to default PIL font
+    font_path = cfg["font_path"]
+    if font_path and os.path.exists(font_path):
+        name_font = ImageFont.truetype(font_path, size=84)
+        sub_font = ImageFont.truetype(font_path, size=24)
+    else:
+        name_font = ImageFont.load_default(size=64)
+        sub_font = ImageFont.load_default(size=20)
+
+    # Center the user's name
+    bbox = draw.textbbox((0, 0), name_text, font=name_font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+    text_x = (width - text_w) / 2
+    text_y = (height - text_h) / 2 - 12
+
+    draw.text((text_x, text_y), name_text, fill=cfg["ink"], font=name_font)
+
+    # Style caption along bottom
+    footer_text = f"Style: {style_name}"
+    fbbox = draw.textbbox((0, 0), footer_text, font=sub_font)
+    fw = fbbox[2] - fbbox[0]
+    draw.text(((width - fw) / 2, height - 62), footer_text, fill=(110, 102, 88), font=sub_font)
+
+    # Decorative vermilion seal stamp on the right
+    seal_x0, seal_y0, seal_x1, seal_y1 = width - 115, 55, width - 55, 115
+    draw.rectangle([seal_x0, seal_y0, seal_x1, seal_y1], outline=cfg["accent"], width=3)
+    draw.text((seal_x0 + 14, seal_y0 + 16), "印", fill=cfg["accent"], font=sub_font)
+
+    return img
+
+
+# --- 5. PREDICTION & RESULT DISPLAY (PERSISTED IN SESSION STATE) ---
 if submitted:
-    # Average each pair of questions into the 5 core dimensions
     dim_structure = (q1 + q2) / 2.0
     dim_tempo = (q3 + q4) / 2.0
     dim_expression = (q5 + q6) / 2.0
@@ -410,14 +472,17 @@ if submitted:
     user_vector = np.array(
         [[dim_structure, dim_tempo, dim_expression, dim_complexity, dim_adaptability]]
     )
+    st.session_state["cluster_idx"] = int(model.predict(user_vector)[0])
+    st.session_state["user_vector"] = user_vector
 
-    # Predict internal cluster (0..8) and convert to 1..9 for display
-    cluster_idx = int(model.predict(user_vector)[0])
+if "cluster_idx" in st.session_state:
+    cluster_idx = st.session_state["cluster_idx"]
+    user_vector = st.session_state["user_vector"]
     display_cluster_num = cluster_idx + 1
     font_info = FONT_MAPPINGS[cluster_idx]
 
-    # Trigger falling hearts
-    trigger_hearts()
+    if submitted:
+        trigger_hearts()
 
     st.markdown("---")
     st.subheader("✨ Your Calligraphy Match Result")
@@ -451,3 +516,43 @@ if submitted:
             }
         ).sort_values("Distance Score (Lower is Closer)")
         st.dataframe(dist_df, hide_index=True)
+
+    # --- 6. PERSONALIZED NAME CALLIGRAPHY GENERATOR ---
+    st.markdown("---")
+    st.subheader("✍️ Generate Your Name in This Calligraphy Style")
+    st.caption(
+        f"Matched with **{font_info['name']}**. Enter your name below to create a personalized calligraphy card."
+    )
+
+    with st.form("name_calligraphy_form"):
+        user_name = st.text_input(
+            "Enter your name",
+            placeholder="e.g., Mei Ling or Alex Chen",
+            max_chars=30,
+        )
+        generate_name_btn = st.form_submit_button("Generate My Calligraphy Name")
+
+    if generate_name_btn:
+        cleaned_name = user_name.strip()
+        if not cleaned_name:
+            st.warning("Please enter a name before generating.")
+        else:
+            card_img = render_name_calligraphy_image(
+                name_text=cleaned_name,
+                cluster_idx=cluster_idx,
+                style_name=font_info["name"],
+            )
+            st.image(
+                card_img,
+                caption=f"{cleaned_name} — {font_info['name']}",
+                use_container_width=True,
+            )
+
+            buf = BytesIO()
+            card_img.save(buf, format="PNG")
+            st.download_button(
+                label="Download Calligraphy Card (PNG)",
+                data=buf.getvalue(),
+                file_name=f"{cleaned_name.lower().replace(' ', '_')}_calligraphy.png",
+                mime="image/png",
+            )
