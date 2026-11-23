@@ -38,8 +38,8 @@ def apply_custom_styling():
         }}
 
         /* Global font: Times New Roman, dark text */
-        html, body, [class*="css"], .stApp, .stMarkdown, .stText, 
-        p, h1, h2, h3, h4, h5, h6, label, .stSlider label, 
+        html, body, [class*="css"], .stApp, .stMarkdown, .stText,
+        p, h1, h2, h3, h4, h5, h6, label, .stSlider label,
         .stMetric, .stSuccess, .stInfo, .stExpander {{
             font-family: "Times New Roman", Times, serif !important;
             color: #1a1a1a !important;
@@ -65,7 +65,6 @@ def apply_custom_styling():
         }}
 
         /* --- FIX FOR MOBILE DARK MODE ON RESULT CARDS --- */
-        /* Assigned Cluster ID Metric Box */
         div[data-testid="stMetric"] {{
             background-color: #f7f3ea !important;
             border: 1px solid #d4cbb8 !important;
@@ -77,7 +76,6 @@ def apply_custom_styling():
             color: #1a1a1a !important;
         }}
 
-        /* Recommended Style Alert Box (st.success / st.info) */
         div[data-testid="stAlert"] {{
             background-color: #eef5ec !important;
             border: 1px solid #bfd4ba !important;
@@ -90,7 +88,6 @@ def apply_custom_styling():
             fill: #1a1a1a !important;
         }}
 
-        /* K-Means Distance Breakdown Expander */
         div[data-testid="stExpander"] details,
         div[data-testid="stExpander"] summary,
         div[data-testid="stExpanderDetails"] {{
@@ -103,7 +100,6 @@ def apply_custom_styling():
             fill: #1a1a1a !important;
         }}
 
-        /* Light-colored submit button */
         div.stButton > button[kind="primary"],
         div.stButton > button,
         button[data-testid="baseButton-primary"],
@@ -125,12 +121,10 @@ def apply_custom_styling():
             color: #1a1a1a !important;
         }}
 
-        /* Slider track and thumb tweaks */
         div[data-testid="stSlider"] {{
             padding-bottom: 0.8rem;
         }}
 
-        /* Falling Hearts Animation */
         @keyframes fall {{
             0% {{
                 transform: translateY(-10vh) rotate(0deg);
@@ -293,6 +287,106 @@ STYLE_RENDER_CONFIG = {
     8: {"font_path": "asset/fonts/splash_ink.ttf", "ink": (15, 15, 15), "accent": "#781d19"},
 }
 
+FALLBACK_CJK_FONTS = [
+    "asset/fonts/NotoSerifTC-Regular.ttf",
+    "asset/fonts/NotoSerifSC-Regular.ttf",
+]
+
+
+def load_calligraphy_font(preferred_path: str, size: int) -> ImageFont.ImageFont:
+    """Loads the cluster's .ttf/.otf font, falling back to a CJK font or default."""
+    candidates = [preferred_path] + FALLBACK_CJK_FONTS
+    for candidate in candidates:
+        if candidate and os.path.exists(candidate):
+            try:
+                return ImageFont.truetype(candidate, size=size)
+            except OSError:
+                continue
+    return ImageFont.load_default(size=max(16, int(size * 0.75)))
+
+
+def render_name_calligraphy_image(
+    name_text: str, cluster_idx: int, style_name: str
+) -> Image.Image:
+    """Renders a personalized rice-paper calligraphy card using a local TTF/OTF font."""
+    width, height = 900, 340
+    paper_bg = (250, 246, 236)
+    cfg = STYLE_RENDER_CONFIG.get(
+        cluster_idx, {"font_path": "", "ink": (25, 25, 25), "accent": "#8b261d"}
+    )
+
+    img = Image.new("RGB", (width, height), color=paper_bg)
+    draw = ImageDraw.Draw(img)
+
+    # Traditional double border
+    draw.rectangle([18, 18, width - 18, height - 18], outline=(195, 184, 162), width=2)
+    draw.rectangle([26, 26, width - 26, height - 26], outline=(220, 212, 194), width=1)
+
+    name_font = load_calligraphy_font(cfg["font_path"], size=84)
+    sub_font = load_calligraphy_font(cfg["font_path"], size=24)
+
+    bbox = draw.textbbox((0, 0), name_text, font=name_font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+    text_x = max(40, (width - text_w) / 2)
+    text_y = (height - text_h) / 2 - 12
+
+    draw.text((text_x, text_y), name_text, fill=cfg["ink"], font=name_font)
+
+    footer_text = f"Style: {style_name}"
+    fbbox = draw.textbbox((0, 0), footer_text, font=sub_font)
+    fw = fbbox[2] - fbbox[0]
+    draw.text(((width - fw) / 2, height - 62), footer_text, fill=(110, 102, 88), font=sub_font)
+
+    # Decorative vermilion seal stamp
+    seal_x0, seal_y0, seal_x1, seal_y1 = width - 115, 55, width - 55, 115
+    draw.rectangle([seal_x0, seal_y0, seal_x1, seal_y1], outline=cfg["accent"], width=3)
+    draw.text((seal_x0 + 14, seal_x0 + 16), "印", fill=cfg["accent"], font=sub_font)
+
+    return img
+
+
+class ChineseNameResult(BaseModel):
+    chinese_name: str
+    pinyin: str
+    meaning: str
+
+
+@st.cache_data(show_spinner=False)
+def generate_chinese_name_llm(
+    user_name: str,
+    style_name: str,
+    traits: str,
+    character_script: str = "Traditional Chinese",
+) -> dict | None:
+    """Translates/adapts a user's name into a poetic Chinese name via Gemini."""
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        return None
+
+    client = genai.Client(api_key=api_key)
+    prompt = (
+        f"Adapt the name '{user_name}' into a 2-to-3 character {character_script} name "
+        f"that sounds natural, respectful, and evocative. "
+        f"Match the aesthetic and vibe of the calligraphy style '{style_name}' "
+        f"and personality traits '{traits}'. "
+        f"Keep the phonetic feel of '{user_name}' when helpful, or blend phonetics with meaningful characters."
+    )
+
+    response = client.models.generate_content(
+        model="gemini-3.5-flash",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=ChineseNameResult,
+            temperature=0.7,
+        ),
+    )
+
+    if not response.text:
+        return None
+    return ChineseNameResult.model_validate_json(response.text).model_dump()
+
 
 # --- 2. INITIALIZE MODEL WITH SYNTHETIC DATA ---
 @st.cache_resource
@@ -331,92 +425,7 @@ def train_kmeans_model():
 model = train_kmeans_model()
 
 
-# --- 3. NAME CALLIGRAPHY & OPTIONAL GEMINI TRANSLATION HELPERS ---
-class ChineseNameResult(BaseModel):
-    chinese_name: str
-    pinyin: str
-    meaning: str
-
-
-@st.cache_data(show_spinner=False)
-def generate_chinese_name_llm(
-    user_name: str,
-    style_name: str,
-    traits: str,
-    character_script: str = "Traditional Chinese",
-) -> dict | None:
-    """Adapts a user's name into a poetic Chinese name matching their calligraphy style."""
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        return None
-
-    client = genai.Client(api_key=api_key)
-    prompt = (
-        f"Adapt the name '{user_name}' into a 2-to-3 character {character_script} name "
-        f"that sounds natural, respectful, and evocative. "
-        f"Match the aesthetic and vibe of the calligraphy style '{style_name}' "
-        f"and personality traits '{traits}'. "
-        f"Keep the phonetic feel of '{user_name}' when helpful, or blend phonetics with meaningful characters."
-    )
-
-    response = client.models.generate_content(
-        model="gemini-4-hydrogen",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=ChineseNameResult,
-            temperature=0.7,
-        ),
-    )
-
-    if not response.text:
-        return None
-    return ChineseNameResult.model_validate_json(response.text).model_dump()
-
-
-def render_name_calligraphy_image(name_text: str, cluster_idx: int, style_name: str) -> Image.Image:
-    """Renders a personalized rice-paper calligraphy card using a local TTF if available."""
-    width, height = 900, 340
-    paper_bg = (250, 246, 236)
-    cfg = STYLE_RENDER_CONFIG.get(
-        cluster_idx, {"font_path": "", "ink": (25, 25, 25), "accent": "#8b261d"}
-    )
-
-    img = Image.new("RGB", (width, height), color=paper_bg)
-    draw = ImageDraw.Draw(img)
-
-    draw.rectangle([18, 18, width - 18, height - 18], outline=(195, 184, 162), width=2)
-    draw.rectangle([26, 26, width - 26, height - 26], outline=(220, 212, 194), width=1)
-
-    font_path = cfg["font_path"]
-    if font_path and os.path.exists(font_path):
-        name_font = ImageFont.truetype(font_path, size=84)
-        sub_font = ImageFont.truetype(font_path, size=24)
-    else:
-        name_font = ImageFont.load_default(size=64)
-        sub_font = ImageFont.load_default(size=20)
-
-    bbox = draw.textbbox((0, 0), name_text, font=name_font)
-    text_w = bbox[2] - bbox[0]
-    text_h = bbox[3] - bbox[1]
-    text_x = (width - text_w) / 2
-    text_y = (height - text_h) / 2 - 12
-
-    draw.text((text_x, text_y), name_text, fill=cfg["ink"], font=name_font)
-
-    footer_text = f"Style: {style_name}"
-    fbbox = draw.textbbox((0, 0), footer_text, font=sub_font)
-    fw = fbbox[2] - fbbox[0]
-    draw.text(((width - fw) / 2, height - 62), footer_text, fill=(110, 102, 88), font=sub_font)
-
-    seal_x0, seal_y0, seal_x1, seal_y1 = width - 115, 55, width - 55, 115
-    draw.rectangle([seal_x0, seal_y0, seal_x1, seal_y1], outline=cfg["accent"], width=3)
-    draw.text((seal_x0 + 14, seal_x0 + 16), "印", fill=cfg["accent"], font=sub_font)
-
-    return img
-
-
-# --- 4. SLIDER LIKERT SCALE HELPER ---
+# --- 3. SLIDER LIKERT SCALE HELPER ---
 def likert_slider(question_text, key):
     """Renders a 1–5 Likert slider with labeled endpoints."""
     st.markdown(f"**{question_text}**")
@@ -435,7 +444,7 @@ def likert_slider(question_text, key):
     return float(value)
 
 
-# --- 5. STREAMLIT UI ---
+# --- 4. STREAMLIT UI ---
 st.title("🖌️ Chinese Calligraphy Personality Matcher")
 st.markdown(
     "Move each slider to indicate how much you agree or disagree with the **10 statements** below. "
@@ -489,7 +498,7 @@ with st.form("calligraphy_form"):
 
     submitted = st.form_submit_button("Find My Calligraphy Font!")
 
-# --- 6. PREDICTION & RESULT DISPLAY ---
+# --- 5. PREDICTION & RESULT DISPLAY ---
 if submitted:
     dim_structure = (q1 + q2) / 2.0
     dim_tempo = (q3 + q4) / 2.0
@@ -545,14 +554,14 @@ if "cluster_idx" in st.session_state:
         ).sort_values("Distance Score (Lower is Closer)")
         st.dataframe(dist_df, hide_index=True)
 
-    # --- 7. PERSONALIZED NAME CALLIGRAPHY GENERATOR ---
+    # --- 6. PERSONALIZED NAME CALLIGRAPHY GENERATOR ---
     st.markdown("---")
     st.subheader("✍️ Generate Your Name in This Calligraphy Style")
     st.caption(
         f"Matched with **{font_info['name']}**. Enter your name below to create a personalized calligraphy card."
     )
 
-    has_api_key = bool(os.getenv("GEMINI_API_KEY"))
+    has_api_key = bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
 
     with st.form("name_calligraphy_form"):
         user_name = st.text_input(
@@ -564,7 +573,7 @@ if "cluster_idx" in st.session_state:
             "Generate poetic Chinese name via Gemini API",
             value=has_api_key,
             disabled=not has_api_key,
-            help="Requires GEMINI_API_KEY in your environment variables.",
+            help="Requires GEMINI_API_KEY or GOOGLE_API_KEY in your environment variables.",
         )
         script_mode = st.selectbox(
             "Chinese character set",
