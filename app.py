@@ -2,8 +2,6 @@ import base64
 from io import BytesIO
 import os
 
-from google import genai
-from google.genai import types
 import numpy as np
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
