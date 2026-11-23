@@ -11,6 +11,9 @@ from pydantic import BaseModel
 from sklearn.cluster import KMeans
 import streamlit as st
 
+pip install streamlit numpy pandas scikit-learn pillow pydantic google-genai
+export GEMINI_API_KEY="your-api-key-here"
+
 # --- 0. PAGE CONFIG (Must be first Streamlit command) ---
 st.set_page_config(
     page_title="Personality Calligraphy Matcher",
