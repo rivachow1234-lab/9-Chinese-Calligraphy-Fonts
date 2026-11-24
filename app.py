@@ -669,7 +669,7 @@ NAME_MAP = {
   "scarlett": "史嘉蕾",
   "soso": "蘇蘇",
   "terry": "泰瑞",
-  "toto": "托托"
+  "toto": "托托",
   "daisy": "黛西",
   "dakota": "達科塔",
   "dale": "戴爾",
