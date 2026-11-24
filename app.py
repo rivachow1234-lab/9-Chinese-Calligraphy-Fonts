@@ -361,7 +361,7 @@ NAME_MAP = {
 # One TTF/OTF per style. Commit these under fonts/ in your repo.
 # Keys MUST match the internal cluster indices 0..8 above.
 FONT_FILES = {
-    0: "fonts/seal.ttf",
+    0: "chongxi_seal.otf",
     1: "fonts/clerical.ttf",
     2: "fonts/yan.ttf",
     3: "fonts/liu.ttf",
