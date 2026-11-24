@@ -32,14 +32,14 @@ def apply_custom_styling():
         f"""
         <style>
         /* Force light color scheme on mobile browsers */
-        :root {{
-            color-scheme: light !important;
+        :root, .stApp {{
+            color-scheme: light only !important;
         }}
 
         /* Global font: Times New Roman, dark text */
         html, body, [class*="css"], .stApp, .stMarkdown, .stText,
         p, h1, h2, h3, h4, h5, h6, label, .stSlider label,
-        .stMetric, .stSuccess, .stInfo, .stExpander {{
+        .stMetric, .stSuccess, .stInfo, .stWarning, .stError, .stExpander {{
             font-family: "Times New Roman", Times, serif !important;
             color: #1a1a1a !important;
         }}
@@ -63,7 +63,31 @@ def apply_custom_styling():
             border: 1px solid rgba(180, 175, 165, 0.4);
         }}
 
-        /* --- FIX FOR MOBILE DARK MODE ON RESULT CARDS --- */
+        /* --- FIX FOR MOBILE DARK MODE ON RESULT & OUTPUT ALERT CARDS --- */
+        div[data-testid="stAlert"],
+        div[data-testid="stAlert"] > div,
+        div[data-testid="stAlert"] [data-testid="stAlertContent"],
+        div[data-testid="stAlert"] [data-testid="stMarkdownContainer"] {{
+            background-color: #eef5ec !important;
+            border-color: #bfd4ba !important;
+            border-radius: 12px !important;
+            color: #1a1a1a !important;
+        }}
+        div[data-testid="stAlert"] {{
+            border: 1px solid #bfd4ba !important;
+        }}
+        div[data-testid="stAlert"] p,
+        div[data-testid="stAlert"] span,
+        div[data-testid="stAlert"] strong,
+        div[data-testid="stAlert"] em,
+        div[data-testid="stAlert"] div {{
+            color: #1a1a1a !important;
+        }}
+        div[data-testid="stAlert"] svg {{
+            color: #1a1a1a !important;
+            fill: #1a1a1a !important;
+        }}
+
         /* Assigned Cluster ID Metric Box */
         div[data-testid="stMetric"] {{
             background-color: #f7f3ea !important;
@@ -74,19 +98,6 @@ def apply_custom_styling():
         div[data-testid="stMetricLabel"] p,
         div[data-testid="stMetricValue"] div {{
             color: #1a1a1a !important;
-        }}
-
-        /* Recommended Style Alert Box (st.success / st.info) */
-        div[data-testid="stAlert"] {{
-            background-color: #eef5ec !important;
-            border: 1px solid #bfd4ba !important;
-            border-radius: 12px !important;
-            color: #1a1a1a !important;
-        }}
-        div[data-testid="stAlert"] p,
-        div[data-testid="stAlert"] svg {{
-            color: #1a1a1a !important;
-            fill: #1a1a1a !important;
         }}
 
         /* K-Means Distance Breakdown Expander */
@@ -102,9 +113,10 @@ def apply_custom_styling():
             fill: #1a1a1a !important;
         }}
 
-        /* Light-colored submit button */
+        /* Light-colored submit & download buttons */
         div.stButton > button[kind="primary"],
         div.stButton > button,
+        div.stDownloadButton > button,
         button[data-testid="baseButton-primary"],
         .stFormSubmitButton > button {{
             background-color: #f5f0e6 !important;
@@ -117,6 +129,7 @@ def apply_custom_styling():
             transition: background-color 0.2s ease, box-shadow 0.2s ease;
         }}
         div.stButton > button:hover,
+        div.stDownloadButton > button:hover,
         .stFormSubmitButton > button:hover {{
             background-color: #ebe4d6 !important;
             border-color: #c4b9a4 !important;
