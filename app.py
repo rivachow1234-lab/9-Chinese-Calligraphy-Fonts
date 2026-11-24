@@ -2197,6 +2197,38 @@ st.markdown(
 )
 st.markdown("---")
 
+# --- ALL-FONTS GALLERY (click to toggle) ---
+if "show_gallery" not in st.session_state:
+    st.session_state.show_gallery = False
+
+if st.button("🖼️ Browse All 9 Calligraphy Styles", key="toggle_gallery"):
+    st.session_state.show_gallery = not st.session_state.show_gallery
+
+if st.session_state.show_gallery:
+    st.markdown("### The 9 Calligraphy Archetypes")
+    for row_start in range(0, 9, 3):
+        cols = st.columns(3)
+        for col_offset in range(3):
+            idx = row_start + col_offset
+            if idx >= 9:
+                break
+            info = FONT_MAPPINGS[idx]
+            with cols[col_offset]:
+                # Prefer the curated preview asset; fall back to rendering the font itself
+                if os.path.exists(info["image"]):
+                    st.image(info["image"], use_container_width=True)
+                elif os.path.exists(FONT_FILES.get(idx, "")):
+                    try:
+                        sample = render_name_image("永", FONT_FILES[idx], font_size=110)
+                        st.image(sample, use_container_width=True)
+                    except Exception:
+                        st.info("Preview unavailable")
+                else:
+                    st.info(f"Preview missing: `{info['image']}`")
+
+                st.markdown(f"**{info['name']}**")
+                st.caption(f"_{info['traits']}_")
+                st.write(info["desc"][:140] + ("…" if len(info["desc"]) > 140 else ""))
 with st.form("calligraphy_form"):
     st.subheader("Your Personality Assessment")
 
