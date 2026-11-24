@@ -1052,7 +1052,7 @@ NAME_MAP = {
   "ivana": "伊凡娜",
   "ivory": "艾芙莉",
   "ivy": "艾薇",
-  "izabella": "伊莎貝拉"
+  "izabella": "伊莎貝拉",
   "jace": "傑斯",
   "jack": "傑克",
   "jackie": "賈姬",
@@ -1449,7 +1449,7 @@ NAME_MAP = {
   "lynette": "琳內特",
   "lynn": "琳恩",
   "lynne": "琳恩",
-  "lyric": "莉瑞克"
+  "lyric": "莉瑞克",
   "mabel": "梅寶",
   "mac": "麥克",
   "macey": "梅西",
@@ -1852,7 +1852,7 @@ NAME_MAP = {
   "ryker": "萊克",
   "rylan": "萊蘭",
   "rylee": "萊莉",
-  "ryleigh": "萊莉"
+  "ryleigh": "萊莉",
   "sabrina": "莎賓娜",
   "sadie": "莎蒂",
   "sage": "賽奇",
