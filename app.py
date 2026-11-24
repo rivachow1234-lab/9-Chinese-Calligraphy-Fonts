@@ -302,6 +302,10 @@ FONT_MAPPINGS = {
 def train_kmeans_model():
     """Generates synthetic training data representing 9 archetypes
     and fits a KMeans model with 9 clusters.
+
+    Returns (kmeans, label_remap, centers) where `label_remap` maps each
+    arbitrary KMeans label (0..8) to the intended semantic index (0..8).
+    This makes `FONT_MAPPINGS[intended_idx]` reliable.
     """
     np.random.seed(42)
     # 5 dimensions: [Structure, Tempo, Expression, Complexity, Adaptability]
@@ -329,10 +333,23 @@ def train_kmeans_model():
 
     kmeans = KMeans(n_clusters=9, random_state=42, n_init=10)
     kmeans.fit(X)
-    return kmeans
+
+    # --- FIX: align arbitrary KMeans labels with our intended 0..8 order ---
+    # KMeans assigns labels in discovery order, NOT in the order of `centers`.
+    # Greedy unique matching: for each intended center, claim the nearest
+    # learned centroid that hasn't already been claimed.
+    learned = kmeans.cluster_centers_
+    unclaimed = set(range(len(learned)))
+    label_remap = {}  # learned_label -> intended_index
+    for intended_idx, c in enumerate(centers):
+        best = min(unclaimed, key=lambda j: np.linalg.norm(learned[j] - c))
+        label_remap[best] = intended_idx
+        unclaimed.remove(best)
+
+    return kmeans, label_remap, centers
 
 
-model = train_kmeans_model()
+model, label_remap, model_centers = train_kmeans_model()
 
 
 # --- 3. SLIDER LIKERT SCALE HELPER ---
@@ -2214,7 +2231,6 @@ if st.session_state.show_gallery:
                 break
             info = FONT_MAPPINGS[idx]
             with cols[col_offset]:
-                # Prefer the curated preview asset; fall back to rendering the font itself
                 if os.path.exists(info["image"]):
                     st.image(info["image"], use_container_width=True)
                 elif os.path.exists(FONT_FILES.get(idx, "")):
@@ -2229,6 +2245,8 @@ if st.session_state.show_gallery:
                 st.markdown(f"**{info['name']}**")
                 st.caption(f"_{info['traits']}_")
                 st.write(info["desc"][:140] + ("…" if len(info["desc"]) > 140 else ""))
+    st.markdown("---")
+
 with st.form("calligraphy_form"):
     st.subheader("Your Personality Assessment")
 
@@ -2297,7 +2315,9 @@ if submitted:
         [[dim_structure, dim_tempo, dim_expression, dim_complexity, dim_adaptability]]
     )
 
-    cluster_idx = int(model.predict(user_vector)[0])
+    # KMeans labels are arbitrary — remap them to the intended 0..8 order.
+    raw_label = int(model.predict(user_vector)[0])
+    cluster_idx = label_remap[raw_label]
     font_info = FONT_MAPPINGS[cluster_idx]
 
     # Persist everything the result & name-generator sections need
@@ -2346,14 +2366,20 @@ if st.session_state.get("result_ready"):
             st.info(f"Preview image placeholder: `{font_info['image']}`")
 
     with st.expander("View K-Means Distance Breakdown"):
+        # `model.transform` gives distances to *learned* centroids, in learned-label order.
+        # Remap so the displayed cluster number matches FONT_MAPPINGS' semantic index.
         distances = model.transform(user_vector)[0]
-        dist_df = pd.DataFrame(
-            {
-                "Cluster": [k + 1 for k in FONT_MAPPINGS.keys()],
-                "Font Style": [f["name"] for f in FONT_MAPPINGS.values()],
-                "Distance Score (Lower is Closer)": distances,
-            }
-        ).sort_values("Distance Score (Lower is Closer)")
+        rows = []
+        for learned_label, d in enumerate(distances):
+            intended = label_remap[learned_label]
+            rows.append(
+                {
+                    "Cluster": intended + 1,
+                    "Font Style": FONT_MAPPINGS[intended]["name"],
+                    "Distance Score (Lower is Closer)": d,
+                }
+            )
+        dist_df = pd.DataFrame(rows).sort_values("Distance Score (Lower is Closer)")
         st.dataframe(dist_df, hide_index=True)
 
     # --- 8. NAME CALLIGRAPHY GENERATOR ---
