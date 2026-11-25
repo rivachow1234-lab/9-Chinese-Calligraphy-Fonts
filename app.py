@@ -1768,6 +1768,7 @@ NAME_MAP = {
   "rachelle": "瑞秋",
   "raegan": "雷根",
   "rafael": "拉斐爾",
+  "rafi": "拉肥",
   "raiden": "雷登",
   "ralph": "拉爾夫",
   "ramiro": "拉米羅",
