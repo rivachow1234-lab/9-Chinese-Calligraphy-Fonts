@@ -204,7 +204,7 @@ FONT_MAPPINGS = {
             "and building things meant to stand the test of time."
         ),
         "traits": "High Structure, High History",
-        "image": "asset/font_0_seal.png",
+        "image": "asset/font_0_seal.jpeg",
     },
     1: {
         "name": "Clerical Script (隸書)",
@@ -215,7 +215,7 @@ FONT_MAPPINGS = {
             "clarity of thought, and ability to bring order to complex situations without unnecessary drama."
         ),
         "traits": "High Structure, Moderate Tempo",
-        "image": "asset/font_1_clerical.png",
+        "image": "asset/font_1_clerical.jpeg",
     },
     2: {
         "name": "Yan Style Standard Script (顏體楷書)",
@@ -226,7 +226,7 @@ FONT_MAPPINGS = {
             "and others to high standards, approaching responsibilities with integrity, resilience, and rock-solid dependability."
         ),
         "traits": "High Structure, Low Impulsivity",
-        "image": "asset/font_2_yan.png",
+        "image": "asset/font_2_yan.jpeg",
     },
     3: {
         "name": "Liu Style Standard Script (柳體楷書)",
@@ -237,7 +237,7 @@ FONT_MAPPINGS = {
             "You value clarity, fairness, and poise, maintaining calm focus even when navigating competing priorities."
         ),
         "traits": "Balanced Structure & Flow",
-        "image": "asset/font_3_liu.png",
+        "image": "asset/font_3_liu.jpeg",
     },
     4: {
         "name": "Smooth Running Script (淡雅行書)",
@@ -248,7 +248,7 @@ FONT_MAPPINGS = {
             "adjust smoothly to shifting circumstances, and bring warmth and cohesion wherever you go."
         ),
         "traits": "Moderate Flow, High Adaptability",
-        "image": "asset/font_4_smooth_running.png",
+        "image": "asset/font_4_smooth_running.jpeg",
     },
     5: {
         "name": "Expressive Running Script (狂行書)",
@@ -259,7 +259,7 @@ FONT_MAPPINGS = {
             "Rules feel like starting points rather than limits to you, and your enthusiasm naturally energizes those around you."
         ),
         "traits": "High Flow, High Expression",
-        "image": "asset/font_5_expressive_running.png",
+        "image": "asset/font_5_expressive_running.jpeg",
     },
     6: {
         "name": "Cursive Script (草書)",
@@ -270,7 +270,7 @@ FONT_MAPPINGS = {
             "You live intensely in the moment, value authenticity above conformity, and express your inner world boldly."
         ),
         "traits": "High Energy, High Extroversion",
-        "image": "asset/font_6_cursive.png",
+        "image": "asset/font_6_cursive.jpeg",
     },
     7: {
         "name": "Slender Gold Calligraphy (瘦金體書法)",
@@ -281,7 +281,7 @@ FONT_MAPPINGS = {
             "Independent and discerning, you prefer refined simplicity over clutter and appreciate subtle beauty others might miss."
         ),
         "traits": "Low Complexity, High Flow",
-        "image": "asset/font_7_slender.png",
+        "image": "asset/font_7_slender.jpeg",
     },
     8: {
         "name": "Heavy Splash Ink Style (重墨書法)",
@@ -292,7 +292,7 @@ FONT_MAPPINGS = {
             "you tackle challenges head-on with raw confidence, originality, and decisive impact."
         ),
         "traits": "High Boldness, Unconventional",
-        "image": "asset/font_8_splash_ink.png",
+        "image": "asset/font_8_splash_ink.jpeg",
     },
 }
 
