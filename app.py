@@ -891,12 +891,12 @@ if st.session_state.get("result_ready"):
         col_name_1, col_name_2 = st.columns(2)
         with col_name_1:
             english_name = st.text_input(
-                "English Name (optional)",
+                "English Name",
                 placeholder="e.g., David",
             )
         with col_name_2:
             chinese_name_input = st.text_input(
-                "Chinese Name (recommended)",
+                "Chinese Name",
                 placeholder="e.g., 王小明",
             )
         generate_btn = st.form_submit_button("✍️ Render My Name")
