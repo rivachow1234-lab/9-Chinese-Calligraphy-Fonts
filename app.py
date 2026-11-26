@@ -374,7 +374,6 @@ def likert_slider(question_text, key):
 # --- 4. NAME CALLIGRAPHY CONFIG ---
 # Small curated map of common English names -> Chinese. Extend as needed.
 NAME_MAP = {
-  {
   "aaron": "亞倫",
   "abbey": "艾比",
   "abbie": "艾比",
@@ -598,7 +597,7 @@ NAME_MAP = {
 }
  
 
-}
+
 
 # One TTF/OTF per style. Commit these under fonts/ in your repo.
 # Keys MUST match the internal cluster indices 0..8 above.
